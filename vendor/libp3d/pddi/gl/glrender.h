@@ -339,6 +339,23 @@ private:
     Mat4 shadowCasterLightVP;
     bool receiveShadowsEnabled = false;
     static constexpr s32 kShadowCascadeCount = 3;
+
+    // Uniform locations for program3D/shadowDepthProgram, cached once at link time
+    // instead of re-hashing the name string on every DrawPrimBuffer call.
+    struct Prog3DUniforms {
+        s32 alphaScale, useZeroTexelKey, mvp, worldMatrix, viewMatrix, cameraPos,
+            shadowDebugMode, receiveShadows, shadowCascadeCount, shadowFilterQuality,
+            shadowBias, shadowLightDir, lightVP, cascadeSplits, cascadeBlendDistances,
+            shadowTexelWorldSize, receiverInstanceId,
+            shadowMap[kShadowCascadeCount], shadowIdMap[kShadowCascadeCount],
+            hasVRAM, texInfoOverrideEnabled, texInfoOverride, vram,
+            realTextureMode, realTex, realTexOffset, realTexSize;
+    } u3D{};
+    struct ShadowDepthUniforms {
+        s32 lightMVP, casterInstanceId, hasUV, hasTexInfo, hasVRAM, useZeroTexelKey,
+            texInfoOverrideEnabled, texInfoOverride, vram,
+            realTextureMode, realTex, realTexOffset, realTexSize;
+    } uShadowDepth{};
     pddiTexture* shadowDepthTextures[kShadowCascadeCount] = {};
     pddiTexture* shadowIdTextures[kShadowCascadeCount] = {};
     u32 shadowCasterInstanceId = 0;

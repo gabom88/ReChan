@@ -51,7 +51,7 @@ const RechanI18n = (() => {
       stick: 'Joystick',
       dpad: 'Cruceta',
       attacksNormal: 'Golpes: normales',
-      attacksDirect: 'Golpes: directos (1–7)',
+      attacksDirect: 'Golpes: directos (1–7 + especiales)',
       labels: 'Etiquetas',
       haptics: 'Vibración',
       showAll: 'Mostrar todos',
@@ -64,6 +64,8 @@ const RechanI18n = (() => {
       'touch.jump': 'Saltar', 'touch.grab': 'Agarrar', 'touch.punch': 'Puño', 'touch.kick': 'Patada',
       'touch.counter': 'Contra', 'touch.roll': 'Rodar', 'touch.status': 'Estado', 'touch.strafe': 'Lateral',
       'touch.select': 'Select', 'touch.start': 'Pausa',
+      'touch.backPunch': 'Puñetazo de espalda', 'touch.heavyPunch': 'Puñetazo fuerte', 'touch.special': 'Golpe especial',
+      'touch.backKick': 'Patada de espalda', 'touch.heavyKick': 'Patada fuerte',
     },
     en: {
       subtitle: 'Jackie Chan Stuntmaster, reimplemented and playable in your browser.',
@@ -113,7 +115,7 @@ const RechanI18n = (() => {
       stick: 'Joystick',
       dpad: 'D-pad',
       attacksNormal: 'Attacks: normal',
-      attacksDirect: 'Attacks: direct (1–7)',
+      attacksDirect: 'Attacks: direct (1–7 + specials)',
       labels: 'Labels',
       haptics: 'Vibration',
       showAll: 'Show all',
@@ -126,6 +128,8 @@ const RechanI18n = (() => {
       'touch.jump': 'Jump', 'touch.grab': 'Grab', 'touch.punch': 'Punch', 'touch.kick': 'Kick',
       'touch.counter': 'Counter', 'touch.roll': 'Roll', 'touch.status': 'Status', 'touch.strafe': 'Strafe',
       'touch.select': 'Select', 'touch.start': 'Pause',
+      'touch.backPunch': 'Back punch', 'touch.heavyPunch': 'Heavy punch', 'touch.special': 'Special move',
+      'touch.backKick': 'Back kick', 'touch.heavyKick': 'Heavy kick',
     },
   };
 

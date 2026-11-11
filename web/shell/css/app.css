@@ -197,6 +197,7 @@ select {
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, .8);
 }
+.tc-direct[data-id^="s"] { background: radial-gradient(circle at 35% 30%, #57493a 0%, #33291f 60%, #211a14 100%); }
 .tc-direct[data-id^="k"] { background: radial-gradient(circle at 35% 30%, #4a4652 0%, #2d2933 60%, #1e1b22 100%); }
 .tc-pressed.tc-button {
   transform: translateY(2px) scale(.96);

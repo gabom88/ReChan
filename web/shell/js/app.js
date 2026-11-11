@@ -157,7 +157,7 @@
 
   function selectForEditor(c) {
     $('ed-selected').classList.toggle('disabled', !c);
-    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) + (c.num ? ' ' + c.num : '') : t(c.type === 'stick' ? 'stick' : 'dpad')) : '—';
+    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) + (typeof c.num === 'number' ? ' ' + c.num : '') : t(c.type === 'stick' ? 'stick' : 'dpad')) : '—';
     if (c) $('ed-size').value = c.size;
   }
 

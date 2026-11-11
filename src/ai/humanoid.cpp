@@ -944,14 +944,17 @@ static u32 s_directMoveNode = 0;
 static u32 s_directMoveTick = 0;
 
 // First node of each distinct animation in the unarmed tree (see
-// autotest --dump-combos): index 0..6 = punches, 7..13 = kicks.
-static constexpr u32 kDirectMoveNodes[14] = {
+// autotest --dump-combos): index 0..6 = punches, 7..13 = kicks,
+// 14..18 = specials (back punch, heavy punch, special, back kick, heavy kick).
+static constexpr s32 kDirectMoveCount = 19;
+static constexpr u32 kDirectMoveNodes[kDirectMoveCount] = {
     0x800CEA84u, 0x800CEB10u, 0x800CEBC4u, 0x800CEC8Cu, 0x800CECF0u, 0x800CEC00u, 0x800CEAD4u, // anims 57 58 59 60 61 62 26
     0x800CEA98u, 0x800CEB60u, 0x800CECDCu, 0x800CEBECu, 0x800CECA0u, 0x800CEB9Cu, 0x800CEBB0u, // anims 53 54 55 56 44 42 48
+    0x800CEAACu, 0x800CEB38u, 0x800CEAE8u, 0x800CEAFCu, 0x800CEB4Cu,                           // anims 64 23 63 65 67
 };
 
 void RequestPlayerDirectMove(s32 index) {
-    if (index < 0 || index >= 14) return;
+    if (index < 0 || index >= kDirectMoveCount) return;
     s_directMoveNode = kDirectMoveNodes[index];
     s_directMoveTick = g_time ? g_time->GetFrameCounter() : 0u;
 }

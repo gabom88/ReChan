@@ -132,7 +132,7 @@ void RequestPlayerDirectMove(s32 index);
 void WebDiag_PollInput() {
     static int32_t s_lastDirect = 0;
     const int32_t direct = rcweb_input_state()->directMove;
-    if (direct != s_lastDirect && direct >= 1 && direct <= 14) {
+    if (direct != s_lastDirect && direct >= 1 && direct <= 19) {
         RequestPlayerDirectMove(direct - 1);
     }
     s_lastDirect = direct;

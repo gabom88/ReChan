@@ -285,9 +285,10 @@ u32 AutoTest_GetHeldButtons() {
     if (s_directCycle && s_playFrames > 60) {
         const s32 slot = (s_playFrames - 60) / 45;
         const s32 phase = (s_playFrames - 60) % 45;
-        const s32 index = slot % 14;
+        const s32 index = slot % 19;
         if (phase < 3) {
-            buttons |= (index < 7) ? PsxPad::Square : PsxPad::Triangle;
+            const bool punch = index < 7 || (index >= 14 && index <= 16);
+            buttons |= punch ? PsxPad::Square : PsxPad::Triangle;
         }
     }
     if (s_fight) {
@@ -344,7 +345,7 @@ bool AutoTest_Step(GameState state) {
 
     ++s_playFrames;
     if (s_directCycle && s_playFrames > 60 && (s_playFrames - 60) % 45 == 0) {
-        const s32 index = ((s_playFrames - 60) / 45) % 14;
+        const s32 index = ((s_playFrames - 60) / 45) % 19;
         LOG_ALWAYS("[AutoTest] direct move %d requested", index + 1);
         RequestPlayerDirectMove(index);
     }

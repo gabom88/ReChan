@@ -59,6 +59,15 @@ const RechanTouch = (() => {
   for (let i = 1; i <= 7; i++) {
     CONTROL_DEFS.push({ id: 'k' + i, type: 'button', bind: B.Y, icon: 'kick', label: 'kick', num: i, direct: 7 + i, group: 'direct' });
   }
+  // Specials (third row): back punch, heavy punch, special, back kick, heavy kick.
+  const SPECIALS = [
+    { id: 'sbp', bind: B.X, icon: 'punch', label: 'backPunch',  badge: '↺', direct: 15 },
+    { id: 'shp', bind: B.X, icon: 'punch', label: 'heavyPunch', badge: '!', direct: 16 },
+    { id: 'ssp', bind: B.X, icon: 'punch', label: 'special',    badge: '★', direct: 17 },
+    { id: 'sbk', bind: B.Y, icon: 'kick',  label: 'backKick',   badge: '↺', direct: 18 },
+    { id: 'shk', bind: B.Y, icon: 'kick',  label: 'heavyKick',  badge: '!', direct: 19 },
+  ];
+  for (const sp of SPECIALS) CONTROL_DEFS.push(Object.assign({ type: 'button', group: 'direct', num: sp.badge }, sp));
 
   const DEFAULT_LAYOUTS = {
     landscape: {
@@ -97,18 +106,22 @@ const RechanTouch = (() => {
     DEFAULT_LAYOUTS.landscape['p' + (i + 1)] = { x: 0.33 + i * 0.058, y: 0.70, size: 0.115, visible: true };
     DEFAULT_LAYOUTS.landscape['k' + (i + 1)] = { x: 0.33 + i * 0.058, y: 0.88, size: 0.115, visible: true };
     // Portrait: two full-width rows under the shoulder buttons.
-    DEFAULT_LAYOUTS.portrait['p' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.595, size: 0.125, visible: true };
-    DEFAULT_LAYOUTS.portrait['k' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.665, size: 0.125, visible: true };
+    DEFAULT_LAYOUTS.portrait['p' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.585, size: 0.125, visible: true };
+    DEFAULT_LAYOUTS.portrait['k' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.655, size: 0.125, visible: true };
   }
+  ['sbp', 'shp', 'ssp', 'sbk', 'shk'].forEach((id, i) => {
+    DEFAULT_LAYOUTS.landscape[id] = { x: 0.384 + i * 0.058, y: 0.24, size: 0.105, visible: true };
+    DEFAULT_LAYOUTS.portrait[id] = { x: 0.22 + i * 0.14, y: 0.725, size: 0.125, visible: true };
+  });
   // In direct mode the portrait d-pad and jump/grab move down to make room.
   const DIRECT_OVERRIDES = {
     portrait: {
-      dpad:  { x: 0.24, y: 0.83, size: 0.34 },
-      stick: { x: 0.24, y: 0.83, size: 0.34 },
-      jump:  { x: 0.66, y: 0.84, size: 0.18 },
-      grab:  { x: 0.86, y: 0.80, size: 0.18 },
-      select: { x: 0.43, y: 0.955, size: 0.09 },
-      start:  { x: 0.57, y: 0.955, size: 0.09 },
+      dpad:  { x: 0.22, y: 0.865, size: 0.30 },
+      stick: { x: 0.22, y: 0.865, size: 0.30 },
+      jump:  { x: 0.66, y: 0.875, size: 0.17 },
+      grab:  { x: 0.86, y: 0.835, size: 0.17 },
+      select: { x: 0.43, y: 0.965, size: 0.08 },
+      start:  { x: 0.57, y: 0.965, size: 0.08 },
     },
     landscape: {},
   };
@@ -210,7 +223,7 @@ const RechanTouch = (() => {
         if (c.num) {
           el.classList.add('tc-direct');
           el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span><span class="tc-num">${c.num}</span>`;
-          el.setAttribute('aria-label', t('touch.' + c.label) + ' ' + c.num);
+          el.setAttribute('aria-label', typeof c.num === 'number' ? t('touch.' + c.label) + ' ' + c.num : t('touch.' + c.label));
         } else {
           el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span>`;
           el.setAttribute('aria-label', t('touch.' + c.label));

@@ -55,7 +55,7 @@ LDFLAGS   := $(OPT) $(EXTRA_LDFLAGS) \
              -sENVIRONMENT=web -sEXIT_RUNTIME=0 \
              -sFORCE_FILESYSTEM=1 -lidbfs.js \
              -sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAPF32,addRunDependency,removeRunDependency,UTF8ToString,stringToNewUTF8 \
-             -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_rcweb_input_state,_rcweb_debug_dump \
+             -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_rcweb_input_state,_rcweb_debug_dump,_rcweb_can_exit_to_map,_rcweb_request_exit_to_map \
              --pre-js rechan_web.pre.js \
              --preload-file $(ROOT)/res/pc@/rechan/pc
 

@@ -933,6 +933,23 @@ static FightingComboNode* GetFallbackFightingRoot() {
     return ResolveFightingRootAddress(kPlayerPunchRootAddress);
 }
 
+// Dev aid (autotest --dump-combos): prints the player's combo tree, one line
+// per move: depth, requested command (GA_*), animation and chain window.
+static void DumpFightingNode(const FightingComboNode* node, s32 depth, s32 budget) {
+    for (; node && budget > 0; node = node->sibling, --budget) {
+        LOG_ALWAYS("[Combo] %*s- cmd=%u anim=%u window=%d..%d addr=0x%08X", depth * 2, "",
+                   (u32)node->requestedCommand, node->moveData ? (u32)node->moveData->anim : 0u,
+                   (s32)node->minFrame, (s32)node->maxFrame, node->psxAddress);
+        if (depth < 12) DumpFightingNode(node->child, depth + 1, 64);
+    }
+}
+
+void DebugDumpPlayerCombos() {
+    const FightingComboNode* root = ResolveFightingRootAddress(kPlayerPunchRootAddress);
+    LOG_ALWAYS("[Combo] player fighting tree (root 0x%08X)", kPlayerPunchRootAddress);
+    DumpFightingNode(root, 0, 64);
+}
+
 // PSX: FindFightingSystem__FUl (FIGHTANI.CPP:213)
 static FightingComboNode* FindFightingSystem(u32 hash) {
     MARKFUNCTION(0x8007DBE0);

@@ -195,6 +195,10 @@ void AutoTest_ParseArgs(int argc, char** argv) {
         else if (std::strcmp(argv[i], "--cheat") == 0 && hasValue) {
             s_cheats.push_back(argv[++i]);
         }
+        else if (std::strcmp(argv[i], "--dump-combos") == 0) {
+            void DebugDumpPlayerCombos();
+            DebugDumpPlayerCombos();
+        }
         else if (std::strcmp(argv[i], "--jump-spam") == 0) {
             s_jumpSpam = true;
         }

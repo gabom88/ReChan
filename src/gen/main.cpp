@@ -455,6 +455,12 @@ int main(int argc, char** argv) {
         if (game.GetState() == GameState::Play) {
             AnimWatch_Step();
         }
+#if defined(RC_PLATFORM_WEB)
+        {
+            void WebDiag_ProcessRequests();
+            WebDiag_ProcessRequests();
+        }
+#endif
 
         if (!AutoTest_Step(game.GetState())) {
             break;

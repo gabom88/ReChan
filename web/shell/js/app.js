@@ -174,6 +174,8 @@
     $('opt-scale').value = String(prefs.scale);
     $('opt-lang').value = RechanI18n.lang;
     $('opt-delete').classList.toggle('hidden', playing);
+    const canMap = playing && window.Module && Module._rcweb_can_exit_to_map && Module._rcweb_can_exit_to_map();
+    $('opt-map').classList.toggle('hidden', !canMap);
     refreshStorageInfo();
     $('settings').classList.remove('hidden');
   }
@@ -387,6 +389,11 @@
     $('opt-edit-touch').addEventListener('click', openTouchEditor);
     $('opt-fullscreen').addEventListener('click', toggleFullscreen);
     $('opt-diag').addEventListener('click', copyDiagnostics);
+    $('opt-map').addEventListener('click', () => {
+      if (!confirm(t('confirmMap'))) return;
+      Module._rcweb_request_exit_to_map();
+      closeSettings();
+    });
     $('test-start').addEventListener('click', startTestFromMenu);
     // F8 copies diagnostics without leaving the game.
     window.addEventListener('keydown', (e) => {

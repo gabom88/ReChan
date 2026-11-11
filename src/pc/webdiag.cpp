@@ -14,6 +14,8 @@
 #include "extra/version.h"
 #include "pc/animwatch.h"
 #include "extra/cheats.h"
+#include "extra/fecustommenumgr.h"
+#include "gen/world.h"
 
 #include <emscripten.h>
 #include <cstdio>
@@ -98,6 +100,42 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
     char* result = static_cast<char*>(std::malloc(out.size() + 1));
     if (result) std::memcpy(result, out.c_str(), out.size() + 1);
     return result;
+}
+
+// ---------------------------------------------------------------------------
+// Requests from the page (☰ menu). They are queued and handled by the main
+// loop between frames (WebDiag_ProcessRequests), never from inside a JS call.
+
+static bool s_exitToMapRequested = false;
+
+static bool CanExitToMap() {
+    if (!g_game || !g_game->GetWorld()) return false;
+    const GameState st = g_game->GetState();
+    if (st != GameState::Play && st != GameState::Menu) return false;
+    return g_game->GetWorld()->GetCurLevelID() != 7; // 7 = the level-select map itself
+}
+
+// 1 when "Back to map" makes sense right now (inside a level).
+extern "C" EMSCRIPTEN_KEEPALIVE int rcweb_can_exit_to_map() {
+    return CanExitToMap() ? 1 : 0;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void rcweb_request_exit_to_map() {
+    s_exitToMapRequested = true;
+}
+
+void WebDiag_ProcessRequests() {
+    if (!s_exitToMapRequested) return;
+    s_exitToMapRequested = false;
+    if (!CanExitToMap()) return;
+    LOG_ALWAYS("[Web] Back to map requested from the page menu");
+#if CUSTOM_MENU
+    if (g_feCustomMenuMgr && g_feCustomMenuMgr->IsActive()) {
+        g_feCustomMenuMgr->Deactivate();
+    }
+#endif
+    // Same transition as the pause menu's "Exit level" -> Yes.
+    g_game->SetState(GameState::OpenLocationMenu);
 }
 
 #endif // RC_PLATFORM_WEB

@@ -1,4 +1,5 @@
 #include "gen/animstruct.h"
+#include "pc/animwatch.h"
 #include "gen/paramanim.h"
 #include "gen/animmgr.h"
 #include "gen/model.h"
@@ -186,6 +187,9 @@ void AnimStructure::ResetCountsToAnim() {
     currentFrame = 0;
     prevFrame = 0;
     loopCount = 0;
+    if (model && model->backPtr) {
+        AnimWatch_OnAnimRestart(model->backPtr, animEnum);
+    }
 
     s32 tick = g_time ? (s32)g_time->frameCounter : 0;
     currentTick = tick;

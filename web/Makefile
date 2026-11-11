@@ -46,7 +46,8 @@ CXXFLAGS  := -std=gnu++20 $(OPT) $(DEFINES) $(INCLUDES) -MMD -MP \
              -fno-strict-aliasing -fwrapv \
              -Wno-deprecated-declarations -Wno-nontrivial-memaccess
 
-LDFLAGS   := $(OPT) \
+# EXTRA_LDFLAGS=--profiling-funcs keeps function names for readable call stacks.
+LDFLAGS   := $(OPT) $(EXTRA_LDFLAGS) \
              -sASYNCIFY=1 -sASYNCIFY_STACK_SIZE=262144 \
              -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 \
              -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=268435456 \

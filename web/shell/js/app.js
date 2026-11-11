@@ -239,6 +239,7 @@
                   '--frames', String(Math.round(minutes * 60 * fps)),
                   '--fps', String(fps), '--fight', '--tour', String(parseInt(params.get('tour') || '450', 10))];
     if (params.get('petal')) args.push('--petal', params.get('petal'));
+    if (params.get('dump')) args.push('--dump-interval', params.get('dump'));
     return args;
   }
 

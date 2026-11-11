@@ -8,6 +8,9 @@
 #include "gen/time.h"
 
 #include <cstdio>
+#if defined(RC_PLATFORM_WEB)
+#include <emscripten.h>
+#endif
 
 namespace {
     // 5 s at the 30 Hz logic rate. Nothing in the game legitimately holds a
@@ -26,6 +29,8 @@ namespace {
     };
 
     Track s_tracks[kMaxTracked];
+    const void* s_traceTarget = nullptr;
+    s32 s_traceBudget = 0;
     u32 s_lastLogicFrame = 0xFFFFFFFFu;
     s32 s_stuckCount = 0;
 
@@ -123,8 +128,24 @@ void AnimWatch_Step() {
             char buf[320];
             Format(buf, sizeof(buf), h, a);
             LOG_ALWAYS("[AnimWatch] STUCK %d frames: %s", t->sameFrames, buf);
+            s_traceTarget = static_cast<const Thing*>(h);
+            s_traceBudget = 3;
         }
     }
+}
+
+void AnimWatch_OnAnimRestart(const void* ownerThing, s32 animEnum) {
+    if (!ownerThing || ownerThing != s_traceTarget || s_traceBudget <= 0) {
+        return;
+    }
+    --s_traceBudget;
+    LOG_ALWAYS("[AnimWatch] restart of anim %d on stuck humanoid %p (frame %u)", animEnum, ownerThing,
+               g_time ? g_time->GetFrameCounter() : 0u);
+#if defined(RC_PLATFORM_WEB)
+    char stack[4096];
+    emscripten_get_callstack(EM_LOG_C_STACK, stack, sizeof(stack));
+    LOG_ALWAYS("%s", stack);
+#endif
 }
 
 std::string AnimWatch_Describe() {

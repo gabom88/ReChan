@@ -27,6 +27,7 @@ static bool s_traceSpawns = false;
 static s32 s_killInterval = 0;
 static bool s_fight = false;     // cycle the attack buttons (press/release)
 static s32 s_tourInterval = 0;   // warp to the next enemy generator every N frames
+static s32 s_dumpInterval = 0;   // log every humanoid's state every N gameplay frames
 static s32 s_frames = 300;
 static s32 s_fps = 60;
 static u32 s_heldButtons = 0;
@@ -187,6 +188,9 @@ void AutoTest_ParseArgs(int argc, char** argv) {
         else if (std::strcmp(argv[i], "--fight") == 0) {
             s_fight = true;
         }
+        else if (std::strcmp(argv[i], "--dump-interval") == 0 && hasValue) {
+            s_dumpInterval = std::atoi(argv[++i]);
+        }
         else if (std::strcmp(argv[i], "--tour") == 0 && hasValue) {
             s_tourInterval = std::atoi(argv[++i]);
         }
@@ -292,6 +296,14 @@ bool AutoTest_Step(GameState state) {
         p3d::display->AddOverlayCallback(CaptureOverlay);
     }
 
+    // A scripted fight can lose every life; the game-over screen then waits for
+    // input forever. Stop with a distinct code instead of hanging.
+    if (state == GameState::DetermineGameOverState || state == GameState::EndGame ||
+        state == GameState::EndGameLoop) {
+        AutoTest_Fail(21, "player ran out of lives (game over)");
+        return false;
+    }
+
     if (state != GameState::Play) {
         if (s_playFrames == 0 && Time::GetTimeInSeconds() - s_startTime > kReachGameplayTimeoutSec) {
             AutoTest_Fail(11, "never reached gameplay");
@@ -301,8 +313,18 @@ bool AutoTest_Step(GameState state) {
     }
 
     ++s_playFrames;
+    // Long --fight runs: keep lives topped up so a death just respawns at the
+    // checkpoint and the run keeps exercising the AI.
+    if (s_fight && Player::s_player && Player::s_player->GetLivesLeft() < 3) {
+        Player::s_player->SetLivesLeft(4);
+    }
     if (s_playFrames == 30 && s_warpGenerator >= 0) {
         WarpToGenerator(s_warpGenerator);
+    }
+    // Lockstep traces: native and web runs of the same autotest are
+    // deterministic, so diffing these dumps finds the first divergent frame.
+    if (s_dumpInterval > 0 && s_playFrames % s_dumpInterval == 0) {
+        LOG_ALWAYS("[Dump] frame=%d\n%s[Dump] end", s_playFrames, AnimWatch_Describe().c_str());
     }
     if (s_tourInterval > 0 && s_playFrames % s_tourInterval == 30) {
         TourToNextEnemy(s_playFrames / s_tourInterval);

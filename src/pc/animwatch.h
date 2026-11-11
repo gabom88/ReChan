@@ -15,3 +15,8 @@ void AnimWatch_Reset();
 bool AnimWatch_IsEnabled();
 s32 AnimWatch_GetStuckCount();          // stuck episodes seen since reset
 std::string AnimWatch_Describe();       // one line per live humanoid
+
+// Called by AnimStructure whenever an animation restarts. While a humanoid is
+// flagged as stuck, its restarts are logged with a call stack (web build) so
+// the code path that keeps re-applying the animation can be identified.
+void AnimWatch_OnAnimRestart(const void* ownerThing, s32 animEnum);

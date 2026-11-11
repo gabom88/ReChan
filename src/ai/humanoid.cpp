@@ -933,6 +933,43 @@ static FightingComboNode* GetFallbackFightingRoot() {
     return ResolveFightingRootAddress(kPlayerPunchRootAddress);
 }
 
+// ---------------------------------------------------------------------------
+// Direct moves (web "direct attacks" control mode): a touch button requests
+// one specific move of the player's combo tree; the next time the fighting
+// code picks a move (EnterCombatCombo, or a combo continuation in
+// ProcessFightingComboNode) it uses that node instead. Targeting, damage,
+// dialogue, enemy reactions and later chaining all follow the normal path.
+// Only applies to Jackie's unarmed tree; requests expire after 20 ticks.
+static u32 s_directMoveNode = 0;
+static u32 s_directMoveTick = 0;
+
+// First node of each distinct animation in the unarmed tree (see
+// autotest --dump-combos): index 0..6 = punches, 7..13 = kicks.
+static constexpr u32 kDirectMoveNodes[14] = {
+    0x800CEA84u, 0x800CEB10u, 0x800CEBC4u, 0x800CEC8Cu, 0x800CECF0u, 0x800CEC00u, 0x800CEAD4u, // anims 57 58 59 60 61 62 26
+    0x800CEA98u, 0x800CEB60u, 0x800CECDCu, 0x800CEBECu, 0x800CECA0u, 0x800CEB9Cu, 0x800CEBB0u, // anims 53 54 55 56 44 42 48
+};
+
+void RequestPlayerDirectMove(s32 index) {
+    if (index < 0 || index >= 14) return;
+    s_directMoveNode = kDirectMoveNodes[index];
+    s_directMoveTick = g_time ? g_time->GetFrameCounter() : 0u;
+}
+
+static u32 TakeDirectMove(const Humanoid* h) {
+    if (s_directMoveNode == 0 || h != static_cast<const Humanoid*>(Player::s_player)) return 0;
+    const u32 now = g_time ? g_time->GetFrameCounter() : 0u;
+    if (now - s_directMoveTick > 20u) {
+        s_directMoveNode = 0;
+        return 0;
+    }
+    const FightingComboNode* root = static_cast<const FightingComboNode*>(h->defaultFightingSystem);
+    if (!root || root->psxAddress != kPlayerPunchRootAddress) return 0; // armed / other style
+    const u32 node = s_directMoveNode;
+    s_directMoveNode = 0;
+    return node;
+}
+
 // Dev aid (autotest --dump-combos): prints the player's combo tree, one line
 // per move: depth, requested command (GA_*), animation and chain window.
 static void DumpFightingNode(const FightingComboNode* node, s32 depth, s32 budget) {
@@ -7064,6 +7101,13 @@ s32 Humanoid::ProcessFightingComboNode() {
 
     if (field488 == 0) {
         field488 = FindChildWithRequestedCommand(currentNode, static_cast<u32>(commandBits), frame);
+        // A direct move replaces the continuation only where the combo could
+        // continue anyway (inside the current move's chain window).
+        if (field488 != 0) {
+            if (const u32 direct = TakeDirectMove(this)) {
+                field488 = direct;
+            }
+        }
         if (field488 == 0) {
             if (anim->loopCount > 0) {
                 if (this == static_cast<Humanoid*>(Player::s_player)) {
@@ -7211,6 +7255,9 @@ s32 Humanoid::EnterCombatCombo() {
     field488 = FindSiblingWithRequestedCommand(
         static_cast<const FightingComboNode*>(defaultFightingSystem),
         static_cast<u32>(commandBits));
+    if (const u32 direct = TakeDirectMove(this)) {
+        field488 = direct;
+    }
 
     if (field488 == 0) {
         if (heldPickup) {

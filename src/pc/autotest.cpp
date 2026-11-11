@@ -29,7 +29,9 @@ static s32 s_killInterval = 0;
 static bool s_fight = false;     // cycle the attack buttons (press/release)
 static s32 s_tourInterval = 0;   // warp to the next enemy generator every N frames
 static s32 s_dumpInterval = 0;
-static bool s_jumpSpam = false;  // press/release jump every 6 frames
+static bool s_jumpSpam = false;
+static bool s_directCycle = false; // request direct moves 1..14 in turn
+void RequestPlayerDirectMove(s32 index);  // press/release jump every 6 frames
 static std::vector<std::string> s_cheats; // --cheat NAME (repeatable)
 static bool s_cheatsApplied = false;   // log every humanoid's state every N gameplay frames
 static s32 s_frames = 300;
@@ -199,6 +201,9 @@ void AutoTest_ParseArgs(int argc, char** argv) {
             void DebugDumpPlayerCombos();
             DebugDumpPlayerCombos();
         }
+        else if (std::strcmp(argv[i], "--direct-cycle") == 0) {
+            s_directCycle = true;
+        }
         else if (std::strcmp(argv[i], "--jump-spam") == 0) {
             s_jumpSpam = true;
         }
@@ -277,6 +282,14 @@ u32 AutoTest_GetHeldButtons() {
     if (s_jumpSpam && (s_playFrames % 6) < 3) {
         buttons |= PsxPad::Cross;
     }
+    if (s_directCycle && s_playFrames > 60) {
+        const s32 slot = (s_playFrames - 60) / 45;
+        const s32 phase = (s_playFrames - 60) % 45;
+        const s32 index = slot % 14;
+        if (phase < 3) {
+            buttons |= (index < 7) ? PsxPad::Square : PsxPad::Triangle;
+        }
+    }
     if (s_fight) {
         // 8-frame cadence: press for 4, release for 4, rotating through every
         // attack so the fighting system, hit reactions and their anim-end
@@ -330,6 +343,11 @@ bool AutoTest_Step(GameState state) {
     }
 
     ++s_playFrames;
+    if (s_directCycle && s_playFrames > 60 && (s_playFrames - 60) % 45 == 0) {
+        const s32 index = ((s_playFrames - 60) / 45) % 14;
+        LOG_ALWAYS("[AutoTest] direct move %d requested", index + 1);
+        RequestPlayerDirectMove(index);
+    }
 #if NEW_CHEATS
     if (!s_cheatsApplied) {
         s_cheatsApplied = true;

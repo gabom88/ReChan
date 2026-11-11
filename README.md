@@ -72,6 +72,12 @@ Desde el lanzador (**Configurar mando táctil**) o durante la partida (**☰ →
 - **Tócalo** para seleccionarlo y cambiar su **tamaño** u **ocultarlo**.
 - Ajusta la **opacidad**, elige **cruceta o joystick** y activa o desactiva la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
 - **Mostrar todos** vuelve a mostrar los controles ocultos y **Restablecer** recupera la distribución por defecto.
+- **Golpes: directos (1–7):** modo de control extra que sustituye los botones de puño y patada por **7 puñetazos y 7 patadas numerados**. Cada botón lanza directamente ese golpe del árbol de combos de Jackie (con su daño, su reacción en el enemigo y sus continuaciones normales), en lugar de tener que encadenarlo. Solo se aplica a la pelea sin arma.
+
+  | Botón | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+  |---|---|---|---|---|---|---|---|
+  | Puñetazo (animación) | 57 | 58 | 59 | 60 | 61 | 62 | 26 |
+  | Patada (animación) | 53 | 54 | 55 | 56 | 44 | 42 | 48 |
 
 La configuración se guarda en el navegador. En modo **Automático**, el mando táctil se oculta al usar un teclado o mando físico y vuelve a aparecer al tocar la pantalla. También puedes fijarlo en **Siempre** o **Nunca**, y bajar la **resolución de render** si el dispositivo va justo.
 

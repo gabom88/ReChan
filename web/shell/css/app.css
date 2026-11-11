@@ -187,6 +187,17 @@ select {
 .tc-icon { width: 58%; height: 58%; display: block; }
 .tc-icon svg { width: 100%; height: 100%; display: block; }
 .tc-small .tc-icon { width: 46%; height: 46%; }
+/* Direct-attack buttons: small icon + the move number. */
+.tc-direct .tc-icon { width: 46%; height: 46%; transform: translate(-16%, -10%); opacity: .75; }
+.tc-num {
+  position: absolute;
+  right: 14%;
+  bottom: 10%;
+  font: 800 1.9em/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .8);
+}
+.tc-direct[data-id^="k"] { background: radial-gradient(circle at 35% 30%, #4a4652 0%, #2d2933 60%, #1e1b22 100%); }
 .tc-pressed.tc-button {
   transform: translateY(2px) scale(.96);
   box-shadow: 0 1px 0 #0d0d10, 0 3px 8px rgba(0, 0, 0, .45), inset 0 2px 6px rgba(0, 0, 0, .5);

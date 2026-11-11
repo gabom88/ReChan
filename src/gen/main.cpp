@@ -397,6 +397,12 @@ int main(int argc, char** argv) {
         rDoTaskList(&rFrameTaskList, static_cast<u32>(rFrameCount));
 
         p3d::display->PollEvents();
+#if defined(RC_PLATFORM_WEB)
+        {
+            void WebDiag_PollInput();
+            WebDiag_PollInput();
+        }
+#endif
 
         if (p3d::input) {
             p3d::input->ServiceInput();

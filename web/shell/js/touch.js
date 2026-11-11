@@ -41,8 +41,8 @@ const RechanTouch = (() => {
     { id: 'stick',  type: 'stick' },
     { id: 'jump',   type: 'button', bind: B.A,    icon: 'jump',    label: 'jump' },
     { id: 'grab',   type: 'button', bind: B.B,    icon: 'grab',    label: 'grab' },
-    { id: 'punch',  type: 'button', bind: B.X,    icon: 'punch',   label: 'punch' },
-    { id: 'kick',   type: 'button', bind: B.Y,    icon: 'kick',    label: 'kick' },
+    { id: 'punch',  type: 'button', bind: B.X,    icon: 'punch',   label: 'punch', group: 'normal' },
+    { id: 'kick',   type: 'button', bind: B.Y,    icon: 'kick',    label: 'kick',  group: 'normal' },
     { id: 'l1',     type: 'button', bind: B.LB,   icon: 'counter', label: 'counter', minor: true },
     { id: 'r1',     type: 'button', bind: B.RB,   icon: 'roll',    label: 'roll',    minor: true },
     { id: 'l2',     type: 'button', bind: 'LT',   icon: 'status',  label: 'status',  minor: true },
@@ -50,6 +50,15 @@ const RechanTouch = (() => {
     { id: 'select', type: 'button', bind: B.BACK, icon: 'select',  label: 'select',  small: true },
     { id: 'start',  type: 'button', bind: B.START, icon: 'start',  label: 'start',   small: true },
   ];
+  // "Direct attacks" control mode: one button per move of the combo tree
+  // (punches 1-7, kicks 1-7). Each press also presses punch/kick, and tells
+  // the engine which move to use (RcWebInput.directMove, 1-14).
+  for (let i = 1; i <= 7; i++) {
+    CONTROL_DEFS.push({ id: 'p' + i, type: 'button', bind: B.X, icon: 'punch', label: 'punch', num: i, direct: i, group: 'direct' });
+  }
+  for (let i = 1; i <= 7; i++) {
+    CONTROL_DEFS.push({ id: 'k' + i, type: 'button', bind: B.Y, icon: 'kick', label: 'kick', num: i, direct: 7 + i, group: 'direct' });
+  }
 
   const DEFAULT_LAYOUTS = {
     landscape: {
@@ -82,8 +91,29 @@ const RechanTouch = (() => {
       start:  { x: 0.60, y: 0.93, size: 0.12, visible: true },
     },
   };
+  // Direct-attack rows: punches on top, kicks below.
+  for (let i = 0; i < 7; i++) {
+    // Landscape: between the d-pad and the jump/grab buttons, lower half.
+    DEFAULT_LAYOUTS.landscape['p' + (i + 1)] = { x: 0.33 + i * 0.058, y: 0.70, size: 0.115, visible: true };
+    DEFAULT_LAYOUTS.landscape['k' + (i + 1)] = { x: 0.33 + i * 0.058, y: 0.88, size: 0.115, visible: true };
+    // Portrait: two full-width rows under the shoulder buttons.
+    DEFAULT_LAYOUTS.portrait['p' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.595, size: 0.125, visible: true };
+    DEFAULT_LAYOUTS.portrait['k' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.665, size: 0.125, visible: true };
+  }
+  // In direct mode the portrait d-pad and jump/grab move down to make room.
+  const DIRECT_OVERRIDES = {
+    portrait: {
+      dpad:  { x: 0.24, y: 0.83, size: 0.34 },
+      stick: { x: 0.24, y: 0.83, size: 0.34 },
+      jump:  { x: 0.66, y: 0.84, size: 0.18 },
+      grab:  { x: 0.86, y: 0.80, size: 0.18 },
+      select: { x: 0.43, y: 0.955, size: 0.09 },
+      start:  { x: 0.57, y: 0.955, size: 0.09 },
+    },
+    landscape: {},
+  };
 
-  const DEFAULT_SETTINGS = { opacity: 0.7, mode: 'dpad', haptics: true };
+  const DEFAULT_SETTINGS = { opacity: 0.7, mode: 'dpad', haptics: true, attacks: 'normal' };
 
   let layouts = {};
   let settings = {};
@@ -102,10 +132,31 @@ const RechanTouch = (() => {
     return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
   }
 
+  // Whether the current attack mode uses this control at all.
+  function inMode(c) {
+    if (c.group === 'normal') return settings.attacks !== 'direct';
+    if (c.group === 'direct') return settings.attacks === 'direct';
+    return true;
+  }
+
   // Control definition merged with the current orientation's placement.
+  // Direct mode keeps its own layout (key prefix "d:") so moving a control
+  // in one mode does not disturb the other.
   function controls() {
-    const layout = layouts[orientation()];
-    return CONTROL_DEFS.map((d) => Object.assign({}, d, layout[d.id]));
+    const o = orientation();
+    const layout = layouts[o];
+    const direct = settings.attacks === 'direct';
+    return CONTROL_DEFS.map((d) => {
+      const place = Object.assign({}, layout[d.id]);
+      if (direct && DIRECT_OVERRIDES[o][d.id]) Object.assign(place, DIRECT_OVERRIDES[o][d.id], layout['d:' + d.id] || {});
+      const c = Object.assign({}, d, place);
+      c.active = c.visible && inMode(c);
+      return c;
+    });
+  }
+  function placeKey(id) {
+    const o = orientation();
+    return (settings.attacks === 'direct' && DIRECT_OVERRIDES[o][id]) ? 'd:' + id : id;
   }
   function find(id) { return controls().find((c) => c.id === id) || null; }
 
@@ -118,7 +169,10 @@ const RechanTouch = (() => {
         Object.assign(settings, saved.settings || {});
         for (const o of ['landscape', 'portrait']) {
           const so = (saved.layouts || {})[o] || {};
-          for (const id in layouts[o]) if (so[id]) Object.assign(layouts[o][id], so[id]);
+          for (const id in so) {
+            if (layouts[o][id]) Object.assign(layouts[o][id], so[id]);
+            else if (id.startsWith('d:')) layouts[o][id] = so[id];
+          }
         }
       }
     } catch (_) { /* corrupt or blocked storage: use defaults */ }
@@ -153,8 +207,14 @@ const RechanTouch = (() => {
         el.innerHTML = (typeof DpadModelB !== 'undefined') ? DpadModelB.markup() : '';
       } else {
         // Icon only; the action name stays available to screen readers.
-        el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span>`;
-        el.setAttribute('aria-label', t('touch.' + c.label));
+        if (c.num) {
+          el.classList.add('tc-direct');
+          el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span><span class="tc-num">${c.num}</span>`;
+          el.setAttribute('aria-label', t('touch.' + c.label) + ' ' + c.num);
+        } else {
+          el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span>`;
+          el.setAttribute('aria-label', t('touch.' + c.label));
+        }
       }
       layer.appendChild(el);
       elements.set(c.id, el);
@@ -175,7 +235,7 @@ const RechanTouch = (() => {
       el.style.left = (c.x * window.innerWidth - s / 2) + 'px';
       el.style.top = (c.y * window.innerHeight - s / 2) + 'px';
       el.style.fontSize = (s * 0.2) + 'px';
-      el.style.display = c.visible ? '' : 'none';
+      el.style.display = c.active ? '' : 'none';
       el.classList.toggle('tc-selected', editing && c.id === selectedId);
     }
   }
@@ -185,7 +245,7 @@ const RechanTouch = (() => {
     let best = null;
     let bestD = Infinity;
     for (const c of controls()) {
-      if (!c.visible) continue;
+      if (!c.active) continue;
       const r = c.size * u / 2 * slop;
       const dx = (x - c.x * window.innerWidth) / r;
       const dy = (y - c.y * window.innerHeight) / r;
@@ -206,6 +266,7 @@ const RechanTouch = (() => {
     let buttons = 0;
     const axes = [0, 0, 0, 0, 0, 0];
     let dpadDirs = 0;
+    let direct = 0;
     for (const p of pointers.values()) {
       const c = find(p.id);
       if (!c) continue;
@@ -213,6 +274,7 @@ const RechanTouch = (() => {
         if (c.bind === 'LT') axes[4] = 1;
         else if (c.bind === 'RT') axes[5] = 1;
         else buttons |= (1 << c.bind);
+        if (c.direct) direct = c.direct;
       } else if (c.type === 'stick') {
         axes[0] = p.ax || 0;
         axes[1] = p.ay || 0;
@@ -223,6 +285,7 @@ const RechanTouch = (() => {
     buttons |= dpadDirs;
     RechanInput.touch.buttons = buttons;
     RechanInput.touch.axes = axes;
+    RechanInput.touch.directMove = direct;
     for (const [id, el] of elements) {
       let pressed = false;
       for (const p of pointers.values()) if (p.id === id) pressed = true;
@@ -298,8 +361,9 @@ const RechanTouch = (() => {
     else if (c.type === 'dpad') updateDpad(p, c, e.clientX, e.clientY);
     else {
       // Let a thumb slide across the action buttons (e.g. punch -> kick).
+      // Direct-attack buttons never slide: each one is a deliberate press.
       const over = controlAt(e.clientX, e.clientY, 1.0);
-      if (over && over.type === 'button' && over.id !== p.id) { p.id = over.id; buzz(); }
+      if (over && over.type === 'button' && over.id !== p.id && !over.direct && !c.direct) { p.id = over.id; buzz(); }
     }
     recompute();
   }
@@ -330,7 +394,10 @@ const RechanTouch = (() => {
   function editMove(e) {
     if (!drag || drag.pointerId !== e.pointerId) return;
     e.preventDefault();
-    const place = layouts[orientation()][drag.id];
+    const o = orientation();
+    const key = placeKey(drag.id);
+    if (!layouts[o][key]) { const f = find(drag.id); layouts[o][key] = { x: f.x, y: f.y, size: f.size, visible: f.visible }; }
+    const place = layouts[o][key];
     place.x = Math.min(0.98, Math.max(0.02, (e.clientX - drag.ox) / window.innerWidth));
     place.y = Math.min(0.98, Math.max(0.02, (e.clientY - drag.oy) / window.innerHeight));
     layout();
@@ -380,7 +447,10 @@ const RechanTouch = (() => {
 
   function updateSelected(changes) {
     if (!selectedId) return;
-    Object.assign(layouts[orientation()][selectedId], changes);
+    const o = orientation();
+    const key = placeKey(selectedId);
+    if (!layouts[o][key]) { const f = find(selectedId); layouts[o][key] = { x: f.x, y: f.y, size: f.size, visible: f.visible }; }
+    Object.assign(layouts[o][key], changes);
     save();
     layout();
   }
@@ -396,7 +466,8 @@ const RechanTouch = (() => {
   function reset() {
     const o = orientation();
     layouts[o] = clone(DEFAULT_LAYOUTS[o]);
-    settings = { ...DEFAULT_SETTINGS };
+    const attacks = settings.attacks;
+    settings = { ...DEFAULT_SETTINGS, attacks };
     applyMode();
     save();
     build();

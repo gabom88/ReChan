@@ -148,6 +148,7 @@
     const s = RechanTouch.settings;
     $('ed-opacity').value = s.opacity;
     $('ed-mode').value = s.mode;
+    $('ed-attacks').value = s.attacks || 'normal';
     $('ed-haptics').checked = !!s.haptics;
     selectForEditor(null);
     RechanTouch.setEditing(true, { onSelect: selectForEditor });
@@ -156,7 +157,7 @@
 
   function selectForEditor(c) {
     $('ed-selected').classList.toggle('disabled', !c);
-    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) : t(c.type === 'stick' ? 'stick' : 'dpad')) : '—';
+    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) + (c.num ? ' ' + c.num : '') : t(c.type === 'stick' ? 'stick' : 'dpad')) : '—';
     if (c) $('ed-size').value = c.size;
   }
 
@@ -410,6 +411,7 @@
     $('ed-hide').addEventListener('click', () => { RechanTouch.updateSelected({ visible: false }); selectForEditor(null); });
     $('ed-opacity').addEventListener('input', (e) => RechanTouch.setSetting('opacity', parseFloat(e.target.value)));
     $('ed-mode').addEventListener('change', (e) => RechanTouch.setSetting('mode', e.target.value));
+    $('ed-attacks').addEventListener('change', (e) => { RechanTouch.setSetting('attacks', e.target.value); selectForEditor(null); });
     $('ed-haptics').addEventListener('change', (e) => RechanTouch.setSetting('haptics', e.target.checked));
     $('ed-showall').addEventListener('click', () => RechanTouch.showAll());
     $('ed-reset').addEventListener('click', () => {

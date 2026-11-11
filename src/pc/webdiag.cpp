@@ -12,6 +12,7 @@
 #include "ai/player.h"
 #include "pc/inputaction.h"
 #include "extra/version.h"
+#include "pddi/gles/glesweb.h"
 #include "pc/animwatch.h"
 #include "extra/cheats.h"
 #include "extra/fecustommenumgr.h"
@@ -122,6 +123,19 @@ extern "C" EMSCRIPTEN_KEEPALIVE int rcweb_can_exit_to_map() {
 
 extern "C" EMSCRIPTEN_KEEPALIVE void rcweb_request_exit_to_map() {
     s_exitToMapRequested = true;
+}
+
+// Direct-attack touch buttons: forward each new press to the fighting code
+// before this frame's input is processed (see RequestPlayerDirectMove).
+void RequestPlayerDirectMove(s32 index);
+
+void WebDiag_PollInput() {
+    static int32_t s_lastDirect = 0;
+    const int32_t direct = rcweb_input_state()->directMove;
+    if (direct != s_lastDirect && direct >= 1 && direct <= 14) {
+        RequestPlayerDirectMove(direct - 1);
+    }
+    s_lastDirect = direct;
 }
 
 void WebDiag_ProcessRequests() {

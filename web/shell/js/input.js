@@ -7,7 +7,7 @@ const RechanInput = (() => {
   const OFF = {
     keys: 0, mouse: 512, mouseX: 520, mouseY: 524, scrollY: 528,
     padButtons: 532, padAxes: 536, padConnected: 560, focused: 561,
-    pointerLocked: 562, touchActive: 563, canvasW: 564, canvasH: 568,
+    pointerLocked: 562, touchActive: 563, canvasW: 564, canvasH: 568, directMove: 572,
   };
 
   // KeyboardEvent.code -> GLFW key code (p3d/keycode.h)
@@ -46,7 +46,7 @@ const RechanInput = (() => {
   let renderScale = 1;
 
   // Touch overlay state (filled by touch.js)
-  const touch = { buttons: 0, axes: [0, 0, 0, 0, 0, 0], active: false };
+  const touch = { buttons: 0, axes: [0, 0, 0, 0, 0, 0], active: false, directMove: 0 };
 
   let lastPhysicalPadAt = 0;
   let lastKeyboardAt = 0;
@@ -58,7 +58,7 @@ const RechanInput = (() => {
     const ptr = Module.rcInputPtr;
     if (!ptr) return;
     const h = heap();
-    const dv = new DataView(h.buffer, ptr, 572);
+    const dv = new DataView(h.buffer, ptr, 576);
     h.set(keys, ptr + OFF.keys);
     h.set(mouse, ptr + OFF.mouse);
     dv.setFloat32(OFF.mouseX, mouseX, true);
@@ -101,6 +101,7 @@ const RechanInput = (() => {
     dv.setUint8(OFF.touchActive, touch.active ? 1 : 0);
     dv.setInt32(OFF.canvasW, canvasW, true);
     dv.setInt32(OFF.canvasH, canvasH, true);
+    dv.setInt32(OFF.directMove, touch.active ? (touch.directMove | 0) : 0, true);
   }
 
   function resizeCanvas() {

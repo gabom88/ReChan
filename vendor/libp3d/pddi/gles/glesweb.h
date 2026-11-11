@@ -26,6 +26,7 @@ struct RcWebInput {
     uint8_t  touchActive;    // 563: touch overlay currently shown
     int32_t  canvasW;        // 564: drawing-buffer size in pixels
     int32_t  canvasH;        // 568
+    int32_t  directMove;     // 572: touch "direct attack" pressed: 1-7 punch, 8-14 kick, 0 none
 };
 
 static_assert(offsetof(RcWebInput, mouse) == 512, "RcWebInput layout");
@@ -35,7 +36,8 @@ static_assert(offsetof(RcWebInput, padButtons) == 532, "RcWebInput layout");
 static_assert(offsetof(RcWebInput, padAxes) == 536, "RcWebInput layout");
 static_assert(offsetof(RcWebInput, padConnected) == 560, "RcWebInput layout");
 static_assert(offsetof(RcWebInput, canvasW) == 564, "RcWebInput layout");
-static_assert(sizeof(RcWebInput) == 572, "RcWebInput layout");
+static_assert(offsetof(RcWebInput, directMove) == 572, "RcWebInput layout");
+static_assert(sizeof(RcWebInput) == 576, "RcWebInput layout");
 
 extern "C" RcWebInput* rcweb_input_state();
 

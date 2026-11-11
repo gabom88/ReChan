@@ -1,3 +1,4 @@
+#include "pc/webmedia.h"
 #include "gen/common.h"
 #include "snd/rsevent.h"
 #include "snd/sound.h"
@@ -350,6 +351,22 @@ static AudioSample LoadDialogSampleFromSelection(s32 character, s32 dialogID,
         || selection.end > g_dialogFileData.size()
         || selection.start >= selection.end) {
         return AUDIO_SAMPLE_INVALID;
+    }
+
+    // Experimental media-pack mode (web): speech from "dialog/cCC_dDDD_vVV.m4a".
+    if (WebMedia_IsActive()) {
+        char mediaKey[64];
+        std::snprintf(mediaKey, sizeof(mediaKey), "dialog/c%02d_d%03d_v%02u.m4a",
+                      character, dialogID, selection.variant);
+        std::vector<s16> mediaPcm;
+        u32 mediaRate = 0, mediaChannels = 0;
+        if (WebMedia_LoadAudio(mediaKey, DIALOG_RATE, mediaPcm, mediaRate, mediaChannels)) {
+            AudioSample mediaSample = AudioEngine::LoadSample(
+                mediaPcm.data(), static_cast<u32>(mediaPcm.size() / mediaChannels), mediaRate, mediaChannels);
+            if (mediaSample != AUDIO_SAMPLE_INVALID) {
+                return mediaSample;
+            }
+        }
     }
 
 #ifdef MOD_LOADER

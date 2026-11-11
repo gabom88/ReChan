@@ -13,6 +13,8 @@ const SHELL = [
   'js/i18n.js',
   'js/store.js',
   'js/extractor.js',
+  'js/zippack.js',
+  'js/media.js',
   'js/input.js',
   'js/dpad-gemuboy.js',
   'js/touch.js',

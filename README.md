@@ -32,6 +32,19 @@ Es el **mismo código C++ de ReChan** compilado a WebAssembly con Emscripten. **
 3. ReChan verifica el serial del disco y extrae solo lo que necesita (carpetas `fe`, `rchars`, `rtarget`, `scr`, `sound`, `tim`, `xc` y seis archivos de la raíz). La extracción es la misma que hace el extractor del juego en PC, y su resultado es byte a byte igual al de `tools/extract_assets/extract_psx_bin.py`.
 4. Pulsa **Jugar**. Las siguientes veces el juego arranca directamente, sin pedir el disco.
 
+### Dos modos: BIN (estable) y ZIP (experimental)
+
+- **Modo BIN · estable:** cargas el `.bin` o `.iso` y el juego usa el audio y el vídeo originales de PlayStation. Es el modo de siempre.
+- **Modo ZIP · experimental:** cargas un ZIP preparado en tu PC con [`tools/media_pack`](tools/media_pack/README.md). La música y las voces van en AAC y los vídeos en H.264 (MP4), que el navegador decodifica por hardware. El ZIP ocupa mucho menos que el BIN. Lo generas en tu PC así:
+
+  ```bash
+  python3 tools/media_pack/make_rechan_pack.py "Jackie Chan Stuntmaster (USA).bin"
+  ```
+
+  En Windows también puedes arrastrar el `.bin` sobre `tools/media_pack/make_rechan_pack.bat`. Necesitas Python 3.9+ y ffmpeg. El ZIP es solo para uso personal: no lo compartas.
+
+El panel **Listo** muestra el modo activo. Para cambiar de modo, pulsa **Borrar assets extraídos** (tus partidas se conservan) y carga el otro archivo. Si el modo ZIP no encuentra un archivo de audio o vídeo convertido, usa el original del juego.
+
 **En iPhone/iPad:** en Safari toca **Compartir → Añadir a pantalla de inicio**. Así el juego se abre a pantalla completa (Safari no permite pantalla completa en páginas normales del iPhone) y el sistema no borra los datos guardados. Safari puede borrar el almacenamiento de las webs que no se visitan en 7 días, pero no el de las apps de la pantalla de inicio.
 
 ### Controles
@@ -157,6 +170,8 @@ Todos los cambios en C++ están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN
 - El audio usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
 - Como en PC, solo se admite la versión **NTSC-U (SLUS-00684)**.
 - El build web se compila con `-fno-strict-aliasing -fwrapv` para tener la misma semántica que MSVC (el compilador con el que se desarrolla ReChan). Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.
+
+- **Modo ZIP:** se probó en Chromium con un disco sintético. Funcionan la importación, la música en M4A, los vídeos en MP4 (con botón de saltar) y el resto del juego en modo BIN sin cambios. **Falta probar el script con el disco real**, en especial la conversión de los `.str`.
 
 ### Modo de prueba
 

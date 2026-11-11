@@ -295,6 +295,28 @@ body.portrait-play #menu-btn { top: calc(100vw * .75 + 6px + var(--safe-t)); bor
 #test-banner.ok { border: 2px solid #4caf50; }
 #test-banner.fail { border: 2px solid var(--danger); }
 
+.zip-option { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.mode-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--card-2); font-weight: 600; }
+.mode-badge.experimental { background: #4a3a14; color: #ffd98a; }
+
+#movie-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#movie-layer video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+#movie-layer .movie-skip {
+  position: absolute;
+  right: calc(16px + var(--safe-r));
+  bottom: calc(16px + var(--safe-b));
+  background: rgba(31, 31, 40, .85);
+}
+#movie-layer .movie-tap { position: absolute; }
+
 #toast {
   position: fixed;
   z-index: 60;

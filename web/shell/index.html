@@ -39,6 +39,13 @@
           <span data-i18n="chooseDisc"></span>
         </label>
         <p class="hint" data-i18n="privacy"></p>
+        <div class="zip-option">
+          <label class="btn file-btn">
+            <input id="zip-input" type="file" accept=".zip,application/zip">
+            <span data-i18n="chooseZip"></span>
+          </label>
+          <p class="hint" data-i18n="zipHelp"></p>
+        </div>
       </section>
 
       <section id="panel-extract" class="panel hidden">
@@ -58,6 +65,7 @@
           <button class="btn" id="touch-config-btn" data-i18n="touchConfig"></button>
           <button class="btn" id="settings-btn" data-i18n="settings"></button>
         </div>
+        <p class="hint"><span class="mode-badge" id="mode-badge"></span></p>
         <p class="hint" id="assets-info"></p>
       </section>
 
@@ -166,6 +174,8 @@
   <script src="js/i18n.js"></script>
   <script src="js/store.js"></script>
   <script src="js/extractor.js"></script>
+  <script src="js/zippack.js"></script>
+  <script src="js/media.js"></script>
   <script src="js/input.js"></script>
   <script src="js/dpad-gemuboy.js"></script>
   <script src="js/touch.js"></script>

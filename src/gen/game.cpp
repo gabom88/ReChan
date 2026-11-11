@@ -1,4 +1,5 @@
 // game.cpp
+#include "pc/webmedia.h"
 #include "common.h"
 #include "gen/game.h"
 #include "gen/display.h"
@@ -2305,6 +2306,11 @@ void Game::PlayMovie(const char* name, s32 skippable, s32 unloadLevel) {
     // PSX: rsEvent(12, 7, 0, 0)
     rsEvent(12, 7, 0, 0);
 
+    // Experimental media-pack mode (web): play "movies/<name>.mp4" with the
+    // browser's video player instead of decoding the STR. Stable mode (and
+    // a missing MP4) falls through to the original player below.
+    if (!WebMedia_PlayMovie(name, skippable != 0)) {
+
     // PSX: new(348) MoviePlayer -> constructor 0x80014338
     MoviePlayer* player = new MoviePlayer();
 
@@ -2362,6 +2368,7 @@ void Game::PlayMovie(const char* name, s32 skippable, s32 unloadLevel) {
 
     // PSX: destructor 0x8001434C with param 3
     delete player;
+    } // !WebMedia_PlayMovie
 
 cleanup:
     // PSX: if (unloadLevel) { LoadOverlay(0); ReloadFont("xc/fonts.1"); LoadCharTexture(0); }

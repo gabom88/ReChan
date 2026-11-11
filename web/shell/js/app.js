@@ -66,6 +66,9 @@
 
   async function showReady() {
     const meta = await RechanStore.getMeta();
+    const zipMode = !!(meta && meta.source === 'zip');
+    $('mode-badge').textContent = t(zipMode ? 'modeZip' : 'modeBin');
+    $('mode-badge').classList.toggle('experimental', zipMode);
     $('assets-info').textContent = t('assetsInfo', {
       serial: (meta && meta.serial) || '?',
       files: RechanStore.fileCount,
@@ -119,6 +122,32 @@
       showError(e instanceof RechanExtractor.ExtractError ? e.message : String(e && e.message || e));
     } finally {
       $('disc-input').value = '';
+    }
+  }
+
+  async function onZipChosen(file) {
+    if (!file) return;
+    showPanel('extract');
+    $('extract-bar').style.width = '0%';
+    $('extract-status').textContent = t('importingZip', { pct: 0 });
+    $('extract-file').textContent = file.name + ' · ' + fmtBytes(file.size);
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    try {
+      const meta = await RechanZipPack.importPack(file, (p) => {
+        const pct = Math.floor((p.done / Math.max(p.total, 1)) * 100);
+        $('extract-bar').style.width = pct + '%';
+        $('extract-status').textContent = t('importingZip', { pct });
+        if (p.current) $('extract-file').textContent = p.current;
+      });
+      await RechanStore.load();
+      toast(t('extracted', { files: meta.files, size: fmtBytes(meta.bytes) }));
+      await showReady();
+    } catch (e) {
+      console.error(e);
+      const code = e instanceof RechanZipPack.PackError ? e.message : '';
+      showError(code ? t('zipErr_' + code) : String(e && e.message || e));
+    } finally {
+      $('zip-input').value = '';
     }
   }
 
@@ -355,10 +384,12 @@
     try { return !!document.createElement('canvas').getContext('webgl2'); } catch (_) { return false; }
   }
 
-  function startEngine() {
+  let startMeta = null;
+  async function startEngine() {
     if (engineLoaded) return;
     if (!hasWebGL2()) { showError(t('noWebgl')); return; }
     engineLoaded = true;
+    startMeta = await RechanStore.getMeta();
     playing = true;
     document.body.classList.add('playing');
     $('launcher').classList.add('hidden');
@@ -383,7 +414,12 @@
       showTestBanner(t('testRunning', { level: testLevel }));
     }
 
+    // Stable (BIN) vs experimental (ZIP pack) mode: only the latter enables
+    // the modern-media hooks in the engine.
+    RechanMedia.setActive(!!(startMeta && startMeta.source === 'zip'));
+
     window.Module = {
+      rcMedia: RechanMedia,
       arguments: testMode ? testArguments() : [],
       rcOnAutotestDone: onAutotestDone,
       canvas,
@@ -418,6 +454,7 @@
     $('ios-hint').classList.toggle('hidden', !(isIOS && !isStandalone));
 
     $('disc-input').addEventListener('change', (e) => onDiscChosen(e.target.files && e.target.files[0]));
+    $('zip-input').addEventListener('change', (e) => onZipChosen(e.target.files && e.target.files[0]));
     $('error-retry').addEventListener('click', () => { showPanel('disc'); $('disc-input').click(); });
     $('play-btn').addEventListener('click', startEngine);
     $('touch-config-btn').addEventListener('click', openTouchEditor);

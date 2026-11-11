@@ -1,5 +1,8 @@
 #include "gen/common.h"
 #include "snd/sound.h"
+#include "pc/webmedia.h"
+#include <cctype>
+#include <string>
 #include "snd/rsevent.h"
 #include "snd/rsdformat.h"
 #include "snd/hmndsnd.h"
@@ -17,6 +20,31 @@ Sound* g_sound = nullptr;
 // SPU pitch 0x0400 = 11025 Hz (SFX), SPU pitch 0x0800 = 22050 Hz (music)
 static constexpr u32 PSX_SFX_RATE = 11025;
 static constexpr u32 PSX_MUSIC_RATE = 22050;
+
+// Experimental media-pack mode (web, see pc/webmedia.h): music comes from
+// "music/<fag name>_sNN.m4a" instead of the FAG. Returns false (and the
+// caller decodes the FAG as always) when that mode is off or the file is
+// missing.
+static bool TryLoadWebMediaMusic(const char* fagPath, u32 songIndex, RsdFormat::FagTrack& outTrack, u32& outRate) {
+    if (!WebMedia_IsActive() || !fagPath) return false;
+    std::string stem = fagPath;
+    const size_t slash = stem.find_last_of("/\\");
+    if (slash != std::string::npos) stem.erase(0, slash + 1);
+    const size_t dot = stem.rfind('.');
+    if (dot != std::string::npos) stem.erase(dot);
+    for (char& c : stem) c = (char)std::tolower((unsigned char)c);
+    char key[96];
+    snprintf(key, sizeof(key), "music/%s_s%02u.m4a", stem.c_str(), songIndex);
+    std::vector<s16> pcm;
+    u32 rate = 0, channels = 0;
+    if (!WebMedia_LoadAudio(key, PSX_MUSIC_RATE, pcm, rate, channels) || channels == 0) return false;
+    outTrack.pcmData = std::move(pcm);
+    outTrack.channels = channels;
+    outTrack.numFrames = (u32)(outTrack.pcmData.size() / channels);
+    outTrack.sampleRate = rate;
+    outRate = rate;
+    return true;
+}
 static constexpr u32 PSX_MUSIC_FADE_MS = 300;
 
 // Helper: read entire file into memory
@@ -230,17 +258,23 @@ bool Sound::PlayMusicTrackSong(const char* fagPath, u32 songIndex, f32 volume) {
     if (TryPlayMusicOverride(fagPath, volume)) return true;
 #endif
 
-    u32 fileSize = 0;
-    u8* fileData = ReadFileBytes(fagPath, fileSize);
-    if (!fileData) { return false; }
+    RsdFormat::FagTrack track;
+    u32 trackRate = PSX_MUSIC_RATE;
+    // LoadFag falls back to song 0 for an out-of-range index; mirror that.
+    if (!TryLoadWebMediaMusic(fagPath, songIndex, track, trackRate)
+        && !(songIndex != 0 && TryLoadWebMediaMusic(fagPath, 0, track, trackRate))) {
+        u32 fileSize = 0;
+        u8* fileData = ReadFileBytes(fagPath, fileSize);
+        if (!fileData) { return false; }
 
-    RsdFormat::FagTrack track = RsdFormat::LoadFag(fileData, fileSize, songIndex);
-    delete[] fileData;
+        track = RsdFormat::LoadFag(fileData, fileSize, songIndex);
+        delete[] fileData;
+    }
     if (track.pcmData.empty()) return false;
 
     StopMusic();
     musicSample = AudioEngine::LoadSample(
-        track.pcmData.data(), track.numFrames, PSX_MUSIC_RATE, track.channels);
+        track.pcmData.data(), track.numFrames, trackRate, track.channels);
     if (musicSample == AUDIO_SAMPLE_INVALID) return false;
 
     musicVolume = volume;
@@ -256,15 +290,19 @@ bool Sound::PlayMusicTrack(const char* fagPath, f32 volume) {
     if (TryPlayMusicOverride(fagPath, volume)) return true;
 #endif
 
-    u32 fileSize = 0;
-    u8* fileData = ReadFileBytes(fagPath, fileSize);
-    if (!fileData) {
-        LOG("Sound: failed to load music '%s'", fagPath);
-        return false;
-    }
+    RsdFormat::FagTrack track;
+    u32 trackRate = PSX_MUSIC_RATE;
+    if (!TryLoadWebMediaMusic(fagPath, 0, track, trackRate)) {
+        u32 fileSize = 0;
+        u8* fileData = ReadFileBytes(fagPath, fileSize);
+        if (!fileData) {
+            LOG("Sound: failed to load music '%s'", fagPath);
+            return false;
+        }
 
-    RsdFormat::FagTrack track = RsdFormat::LoadFag(fileData, fileSize);
-    delete[] fileData;
+        track = RsdFormat::LoadFag(fileData, fileSize);
+        delete[] fileData;
+    }
 
     if (track.pcmData.empty()) {
         LOG("Sound: failed to decode music '%s'", fagPath);
@@ -276,7 +314,7 @@ bool Sound::PlayMusicTrack(const char* fagPath, f32 volume) {
 
     // Load decoded PCM as an AudioSample (stereo for FAG)
     musicSample = AudioEngine::LoadSample(
-        track.pcmData.data(), track.numFrames, PSX_MUSIC_RATE, track.channels);
+        track.pcmData.data(), track.numFrames, trackRate, track.channels);
     if (musicSample == AUDIO_SAMPLE_INVALID) {
         LOG("Sound: failed to load music sample");
         return false;
@@ -301,15 +339,19 @@ bool Sound::PreloadMusicTrack(const char* fagPath, f32 volume) {
         pendingMusicSample = AUDIO_SAMPLE_INVALID;
     }
 
-    u32 fileSize = 0;
-    u8* fileData = ReadFileBytes(fagPath, fileSize);
-    if (!fileData) {
-        LOG("Sound: failed to load music '%s'", fagPath);
-        return false;
-    }
+    RsdFormat::FagTrack track;
+    u32 trackRate = PSX_MUSIC_RATE;
+    if (!TryLoadWebMediaMusic(fagPath, 0, track, trackRate)) {
+        u32 fileSize = 0;
+        u8* fileData = ReadFileBytes(fagPath, fileSize);
+        if (!fileData) {
+            LOG("Sound: failed to load music '%s'", fagPath);
+            return false;
+        }
 
-    RsdFormat::FagTrack track = RsdFormat::LoadFag(fileData, fileSize);
-    delete[] fileData;
+        track = RsdFormat::LoadFag(fileData, fileSize);
+        delete[] fileData;
+    }
 
     if (track.pcmData.empty()) {
         LOG("Sound: failed to decode music '%s'", fagPath);
@@ -317,7 +359,7 @@ bool Sound::PreloadMusicTrack(const char* fagPath, f32 volume) {
     }
 
     pendingMusicSample = AudioEngine::LoadSample(
-        track.pcmData.data(), track.numFrames, PSX_MUSIC_RATE, track.channels);
+        track.pcmData.data(), track.numFrames, trackRate, track.channels);
     if (pendingMusicSample == AUDIO_SAMPLE_INVALID) {
         LOG("Sound: failed to load music sample (preload)");
         return false;

@@ -95,12 +95,31 @@ bool glesDisplay::InitDisplay(const pddiDisplayInit& init) {
     emscripten_webgl_enable_extension(ctx, "EXT_color_buffer_half_float");
     emscripten_webgl_enable_extension(ctx, "OES_texture_float_linear");
     webContext_ = (int)ctx;
+    {
+        GLint maxSamples = 0;
+        glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+        maxMsaaSamples = maxSamples;
+    }
+    SetMSAA(init.msaa);
 
     width = s_webInput.canvasW > 0 ? s_webInput.canvasW : init.xSize;
     height = s_webInput.canvasH > 0 ? s_webInput.canvasH : init.ySize;
     lastFocused_ = true;
     rcweb_display_ready();
     return true;
+}
+
+// The menu offers 0/2/4/8/16; WebGL2 usually allows 4 (Safari, most phones)
+// or 8. Keep the highest allowed value not above the request.
+void glesDisplay::SetMSAA(int samples) {
+    static const int kAllowed[] = { 16, 8, 4, 2 };
+    int chosen = 0;
+    if (samples > 0) {
+        for (int v : kAllowed) {
+            if (v <= samples && (maxMsaaSamples <= 0 || v <= maxMsaaSamples)) { chosen = v; break; }
+        }
+    }
+    msaaSamples = chosen;
 }
 
 void glesDisplay::SwapBuffers() {

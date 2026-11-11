@@ -473,7 +473,13 @@ void ShadowCSM::BeginFrame() {
 
     const s32 qualityIndex = (s32)s_quality - 1;
     const s32 activeCascadeCount = kActiveCascadeCount[qualityIndex];
+#if defined(RC_PLATFORM_WEB)
+    // 8192^2 cascades need ~1.5 GB of GPU memory (depth + caster id, x3):
+    // browsers (and iPhones in particular) kill the page long before that.
+    const s32 resolution = std::min(kCascadeResolution[qualityIndex], (s32)4096);
+#else
     const s32 resolution = kCascadeResolution[qualityIndex];
+#endif
     const f32 paddingScale = kCascadePaddingScale[qualityIndex];
     if (!EnsureTargets(resolution, activeCascadeCount)) {
         return;

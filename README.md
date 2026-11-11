@@ -167,6 +167,7 @@ Todos los cambios en C++ están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN
 ### Estado y limitaciones conocidas
 
 - Lo probado en Chromium (escritorio y emulación de iPhone): compilación completa, extracción (`.bin` raw 2352 y `.iso` 2048), arranque del motor con WebGL2, mando táctil, persistencia de partidas y PWA. **Falta probarlo con el disco real** en Safari/iPhone: el rendimiento y la memoria en partida completa están sin medir.
+- **Gráficos:** el antialiasing (MSAA) y las sombras dinámicas funcionan igual que en PC. El MSAA se ajusta al máximo que permita el navegador (normalmente 4×; en el menú se muestra el valor aplicado). En la web, «Muy alta» en sombras usa mapas de 4096 px en vez de 8192, porque los de 8192 necesitan unos 1,5 GB de memoria de vídeo. En iPhone se recomienda «Baja» o «Media».
 - El audio usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
 - Como en PC, solo se admite la versión **NTSC-U (SLUS-00684)**.
 - El build web se compila con `-fno-strict-aliasing -fwrapv` para tener la misma semántica que MSVC (el compilador con el que se desarrolla ReChan). Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.

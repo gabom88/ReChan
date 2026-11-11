@@ -40,7 +40,17 @@ static const char* kGLESPreamble =
     "precision highp int;\n"
     "#define NOPERSP\n"
     "#define HIGHP highp\n"
-    "#define VRAM_FLOAT 1\n";
+    "#define VRAM_FLOAT 1\n"
+#if defined(RC_PLATFORM_WEB)
+    // WebGL2 runs the same shadow path as desktop GL: cascade sampling with
+    // hardware depth compare and an R32UI caster-id target. GLSL ES has no
+    // default precision for these sampler types.
+    "precision highp sampler2DShadow;\n"
+    "precision highp usampler2D;\n"
+    "#define HAS_SHADOW_CASCADES 1\n"
+    "#define HAS_INT_ID_TARGET 1\n"
+#endif
+    ;
 
 static u32 CompileGLESShader(u32 type, const char* src, const char* programName, const char* stageName) {
     if (!src) {
@@ -218,10 +228,12 @@ bool glesTexture::SetRenderTargetStorage(int w, int h, pddiRenderTargetFormat fo
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
+#if !defined(RC_PLATFORM_WEB)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ONE);
+#endif
         glBindTexture(GL_TEXTURE_2D, 0);
         filterMode = PDDI_FILTER_NONE;
         return handle != 0;
@@ -252,7 +264,11 @@ bool glesTexture::SetIdTargetStorage(int w, int h) {
     if (handle) glDeleteTextures(1, &handle);
     glGenTextures(1, &handle);
     glBindTexture(GL_TEXTURE_2D, handle);
+#if defined(RC_PLATFORM_WEB)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -741,9 +757,20 @@ glesContext::glesContext(glesDisplay* disp) : display(disp) {
     LogGles("glesContext: constructing (#%d this run)", totalContexts);
     GetDefaultWhiteTexture();
     s_defaultWhiteTextureUsers++;
-    // No shadowCompareSampler (unlike desktop): the GLES preamble leaves
+    // No shadowCompareSampler on Switch: its preamble leaves
     // HAS_SHADOW_CASCADES undefined, so the mesh shader compiles without any
-    // sampler2DShadow use, which the recompiler rejects.
+    // sampler2DShadow use, which the recompiler rejects. WebGL2 uses the
+    // desktop path (no CLAMP_TO_BORDER in GLES 3.0: the shader already
+    // treats out-of-cascade UVs as lit).
+#if defined(RC_PLATFORM_WEB)
+    glGenSamplers(1, &shadowCompareSampler);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glSamplerParameteri(shadowCompareSampler, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL);
+#endif
     InitQuadMesh();
     LogGles("glesContext: InitQuadMesh done");
     InitGouraudMesh();
@@ -768,6 +795,8 @@ glesContext::~glesContext() {
     if (batchProgram) glDeleteProgram(batchProgram);
     if (program3D) glDeleteProgram(program3D);
     if (shadowDepthProgram) glDeleteProgram(shadowDepthProgram);
+    if (shadowCompareSampler) glDeleteSamplers(1, &shadowCompareSampler);
+    DestroyMSAAFramebuffer();
 
     if (s_defaultWhiteTextureUsers > 0) {
         s_defaultWhiteTextureUsers--;
@@ -777,11 +806,88 @@ glesContext::~glesContext() {
     }
 }
 
+void glesContext::DestroyMSAAFramebuffer() {
+    if (msaaDepthStencilRbo) { glDeleteRenderbuffers(1, &msaaDepthStencilRbo); msaaDepthStencilRbo = 0; }
+    if (msaaColorRbo) { glDeleteRenderbuffers(1, &msaaColorRbo); msaaColorRbo = 0; }
+    if (msaaFbo) { glDeleteFramebuffers(1, &msaaFbo); msaaFbo = 0; }
+    msaaWidth = msaaHeight = activeMsaaSamples = 0;
+}
+
+void glesContext::EnsureMSAAFramebuffer(s32 samples, s32 width, s32 height) {
+    if (samples <= 0 || width <= 0 || height <= 0) {
+        DestroyMSAAFramebuffer();
+        return;
+    }
+    if (msaaFbo && activeMsaaSamples == samples && msaaWidth == width && msaaHeight == height) {
+        return;
+    }
+    DestroyMSAAFramebuffer();
+    glGenFramebuffers(1, &msaaFbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, msaaFbo);
+    glGenRenderbuffers(1, &msaaColorRbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, msaaColorRbo);
+    // Must match the default framebuffer's format for the resolve blit; the
+    // web canvas is created without alpha (RGB8).
+#if defined(RC_PLATFORM_WEB)
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGB8, width, height);
+#else
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+#endif
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, msaaColorRbo);
+    glGenRenderbuffers(1, &msaaDepthStencilRbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, msaaDepthStencilRbo);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaaDepthStencilRbo);
+    const GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        std::fprintf(stderr, "GLES: MSAA framebuffer incomplete (status=0x%X, samples=%d)\n", status, samples);
+        DestroyMSAAFramebuffer();
+        return;
+    }
+    msaaWidth = width;
+    msaaHeight = height;
+    activeMsaaSamples = samples;
+}
+
+void glesContext::ResolveMSAA() {
+    if (!usingMsaaFramebuffer || !msaaFbo) return;
+    int vx, vy, vw, vh;
+    display->GetViewport(vx, vy, vw, vh);
+    const bool hadScissor = glIsEnabled(GL_SCISSOR_TEST) == GL_TRUE;
+    if (hadScissor) glDisable(GL_SCISSOR_TEST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, msaaFbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(vx, vy, vx + vw, vy + vh, vx, vy, vx + vw, vy + vh,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (hadScissor) glEnable(GL_SCISSOR_TEST);
+    usingMsaaFramebuffer = false;
+}
+
+void glesContext::ResolveForOverlayPass() {
+    ResolveMSAA();
+}
+
 void glesContext::BeginFrame() {
     int vx, vy, vw, vh;
     display->GetViewport(vx, vy, vw, vh);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    usingMsaaFramebuffer = false;
+    const s32 desiredSamples = display ? display->GetMSAA() : 0;
+    if (desiredSamples > 0 && vw > 0 && vh > 0) {
+        EnsureMSAAFramebuffer(desiredSamples, vw, vh);
+    }
+    else if (msaaFbo) {
+        DestroyMSAAFramebuffer();
+    }
+    if (msaaFbo) {
+        glBindFramebuffer(GL_FRAMEBUFFER, msaaFbo);
+        usingMsaaFramebuffer = true;
+    }
+    else {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
     glViewport(vx, vy, vw, vh);
     glScissor(vx, vy, vw, vh);
     glEnable(GL_SCISSOR_TEST);
@@ -791,6 +897,7 @@ void glesContext::BeginFrame() {
 
 void glesContext::EndFrame() {
     glDisable(GL_SCISSOR_TEST);
+    ResolveMSAA();
     glFlush();
 }
 
@@ -1002,8 +1109,13 @@ void glesContext::ClearShadowCasterIdTarget() {
         return;
     }
 
+#if defined(RC_PLATFORM_WEB)
+    static const GLuint kZeroId[4] = { 0, 0, 0, 0 };
+    glClearBufferuiv(GL_COLOR, 0, kZeroId);
+#else
     static const GLfloat kZeroId[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     glClearBufferfv(GL_COLOR, 0, kZeroId);
+#endif
 }
 
 void glesContext::DrawFilledCircle(pddiBaseShader* shader,
@@ -1333,6 +1445,18 @@ void glesContext::Init3DShader() {
         u3D.realTex = glGetUniformLocation(program3D, "uRealTex");
         u3D.realTexOffset = glGetUniformLocation(program3D, "uRealTexOffset");
         u3D.realTexSize = glGetUniformLocation(program3D, "uRealTexSize");
+#if defined(RC_PLATFORM_WEB)
+        // Every sampler uniform defaults to unit 0. WebGL rejects any draw where
+        // samplers of different types (uVRAM vs sampler2DShadow/usampler2D)
+        // share a unit, even when shadows are off, so pin the shadow samplers
+        // to their own units (the same ones the draw path binds) up front.
+        glUseProgram(program3D);
+        for (s32 i = 0; i < kShadowCascadeCount; i++) {
+            if (u3D.shadowMap[i] >= 0) glUniform1i(u3D.shadowMap[i], 2 + i);
+            if (u3D.shadowIdMap[i] >= 0) glUniform1i(u3D.shadowIdMap[i], 5 + i);
+        }
+        glUseProgram(0);
+#endif
     }
 }
 
@@ -1588,12 +1712,13 @@ void glesContext::DrawPrimBuffer(pddiPrimBuffer* buffer, u32 indexOffset, u32 in
         glUniform1ui(u3D.receiverInstanceId, shadowReceiverInstanceId);
         for (s32 i = 0; i < shadowCascadeCount; i++) {
             if (!shadowDepthTextures[i]) continue;
-            // No sampler-object override (unlike desktop): the texture's own NEAREST/
-            // COMPARE_MODE=NONE state already matches what the manual-compare shader wants.
+            // Web: hardware depth compare through the sampler object (as desktop).
             static_cast<glesTexture*>(shadowDepthTextures[i])->Bind(2 + i);
+            if (shadowCompareSampler) glBindSampler(2 + i, shadowCompareSampler);
             glUniform1i(u3D.shadowMap[i], 2 + i);
             if (shadowIdTextures[i]) {
                 static_cast<glesTexture*>(shadowIdTextures[i])->Bind(5 + i);
+                if (shadowCompareSampler) glBindSampler(5 + i, 0);
                 glUniform1i(u3D.shadowIdMap[i], 5 + i);
             }
         }

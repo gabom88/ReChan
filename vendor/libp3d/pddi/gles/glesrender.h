@@ -198,8 +198,13 @@ public:
     bool IsBorderless() override { return false; }
     void SetResolution(int w, int h) override { width = w; height = h; }
     void SetVSync(bool enabled) override;
+#if defined(RC_PLATFORM_WEB)
+    void SetMSAA(int samples) override;
+    int  GetMSAA() override { return msaaSamples; }
+#else
     void SetMSAA(int) override {}
     int  GetMSAA() override { return 0; }
+#endif
     void SetWindowPos(int, int) override {}
 
 #if defined(RC_PLATFORM_WEB)
@@ -233,6 +238,8 @@ private:
     void* eglSurface_ = nullptr; // EGLSurface
     int width = 1280;
     int height = 720;
+    int msaaSamples = 0;     // web: 0/2/4/8, clamped to GL_MAX_SAMPLES
+    int maxMsaaSamples = 0;
     bool shouldClose = false;
     pddiWndProc wndProc;
 };
@@ -276,7 +283,7 @@ public:
     void SetPolygonOffset(bool enable, f32 factor = 0.0f, f32 units = 0.0f) override;
     void SetScissor(int x, int y, int w, int h) override;
     void SetMultisampleEnabled(bool enable) override { multisampleEnabled = enable; }
-    void ResolveForOverlayPass() override {}
+    void ResolveForOverlayPass() override;
 
     pddiRenderTarget* CreateRenderTarget(int width, int height,
                                           pddiRenderTargetFormat format,
@@ -361,6 +368,14 @@ private:
     u32 quadVBO = 0;
     u32 program3D = 0;
     u32 shadowDepthProgram = 0;
+    u32 shadowCompareSampler = 0;  // web only (hardware depth compare)
+    // MSAA: the scene renders into this multisampled FBO, resolved at EndFrame.
+    void DestroyMSAAFramebuffer();
+    void EnsureMSAAFramebuffer(s32 samples, s32 width, s32 height);
+    void ResolveMSAA();
+    u32 msaaFbo = 0, msaaColorRbo = 0, msaaDepthStencilRbo = 0;
+    s32 msaaWidth = 0, msaaHeight = 0, activeMsaaSamples = 0;
+    bool usingMsaaFramebuffer = false;
     bool shadowCasterPassActive = false;
     Mat4 shadowCasterLightVP;
     bool receiveShadowsEnabled = false;

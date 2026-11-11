@@ -19,6 +19,8 @@ static bool s_heavenBound = false;
 static bool s_bobbleHead = false;
 static bool s_stuntquake = false;
 static bool s_mirrorWorld = false;
+static bool s_infiniteJump = false;
+static bool s_noClipWalls = false;
 static PetalStats s_dragonSnapshot[21] = {};
 static PetalStats s_levelSnapshot[21] = {};
 static u8 s_currentGoldSnapshot = 0;
@@ -35,6 +37,8 @@ static bool* GetCheatFlag(CheatOption option) {
         case CheatOption::BobbleHead: return &s_bobbleHead;
         case CheatOption::Stuntquake: return &s_stuntquake;
         case CheatOption::MirrorWorld: return &s_mirrorWorld;
+        case CheatOption::InfiniteJump: return &s_infiniteJump;
+        case CheatOption::NoClipWalls: return &s_noClipWalls;
     }
     return nullptr;
 }
@@ -124,6 +128,8 @@ void ResetCheats() {
     SetCheatEnabled(CheatOption::BobbleHead, false);
     SetCheatEnabled(CheatOption::Stuntquake, false);
     SetCheatEnabled(CheatOption::MirrorWorld, false);
+    SetCheatEnabled(CheatOption::InfiniteJump, false);
+    SetCheatEnabled(CheatOption::NoClipWalls, false);
 }
 
 #endif

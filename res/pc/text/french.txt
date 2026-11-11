@@ -604,6 +604,18 @@ Extraction echouee : %s
 [FE_MODS]
 Mods
 
+[FE_GMODS]
+Mods
+
+[FE_MD_IJMP]
+Sauts infinis:
+
+[FE_MD_NCLP]
+Traverser les murs:
+
+[FE_MD_LIST]
+Mods installes
+
 [FE_MOD_NONE]
 Aucun mod installe
 

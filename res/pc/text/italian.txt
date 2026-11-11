@@ -604,6 +604,18 @@ Estrazione non riuscita: %s
 [FE_MODS]
 Mod
 
+[FE_GMODS]
+Mods
+
+[FE_MD_IJMP]
+Salti infiniti:
+
+[FE_MD_NCLP]
+Attraversa i muri:
+
+[FE_MD_LIST]
+Mod installate
+
 [FE_MOD_NONE]
 Nessuna mod installata
 

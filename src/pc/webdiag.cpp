@@ -13,6 +13,7 @@
 #include "pc/inputaction.h"
 #include "extra/version.h"
 #include "pc/animwatch.h"
+#include "extra/cheats.h"
 
 #include <emscripten.h>
 #include <cstdio>
@@ -73,6 +74,22 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
         add("input.held=[%s] gamepadActive=%d", held.c_str(), g_actionInput->IsGamepadActive() ? 1 : 0);
     }
 
+#if NEW_CHEATS
+    {
+        static const struct { CheatOption opt; const char* name; } kCheats[] = {
+            { CheatOption::AllDragons, "AllDragons" }, { CheatOption::AllLevels, "AllLevels" },
+            { CheatOption::GodMode, "GodMode" }, { CheatOption::OnePunchMan, "OnePunchMan" },
+            { CheatOption::HeavenBound, "HeavenBound" }, { CheatOption::BobbleHead, "BobbleHead" },
+            { CheatOption::Stuntquake, "Stuntquake" }, { CheatOption::MirrorWorld, "MirrorWorld" },
+            { CheatOption::InfiniteJump, "InfiniteJump" }, { CheatOption::NoClipWalls, "NoClipWalls" },
+        };
+        std::string on;
+        for (const auto& c : kCheats) {
+            if (IsCheatEnabled(c.opt)) { on += c.name; on += ' '; }
+        }
+        add("cheats.enabled=[%s]", on.c_str());
+    }
+#endif
     add("animwatch.stuckEpisodes=%d", AnimWatch_GetStuckCount());
     out += "--- humanoids ---\n";
     out += AnimWatch_Describe();

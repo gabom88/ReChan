@@ -1,4 +1,5 @@
 #include "gen/colmgr.h"
+#include "extra/cheats.h"
 #include "gen/colsect.h"
 #include "gen/colwall.h"
 #include "gen/colfloor.h"
@@ -288,6 +289,14 @@ void HandleThingWall(DynamicThing* thing, s32 radius, s32 height, s32 checkHeigh
 
     // Fill wall array using HTW globals for search area
     HTW_FillWallArray(radius, height, checkHeight);
+#if NEW_CHEATS
+    // Mod "Walk through walls": the player gets no walls to collide with.
+    // Floors (HandleThingFloor) and boxes/obstacles (obstacle collisions)
+    // are separate passes and still apply; hand/foot combat hits below too.
+    if (thing == static_cast<DynamicThing*>(Player::s_player) && IsCheatEnabled(CheatOption::NoClipWalls)) {
+        g_filledWallCount = 0;
+    }
+#endif
 
     // Run iterative wall correction (modifies HTW globals)
     s32 wallHit = HTW_HandleWallCollisions(thing, radius, height, checkHeight);

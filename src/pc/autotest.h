@@ -6,7 +6,7 @@ enum class GameState : s32;
 // rechan --autotest <levelIndex> [--level-id N] [--petal N] [--frames N] [--fps N]
 //        [--hold up,cross,...] [--screenshot out.png]
 //        [--warp-generator N] [--kill-interval N] [--trace-spawns]
-//        [--fight] [--tour N] [--dump-interval N]
+//        [--fight] [--tour N] [--dump-interval N] [--cheat NAME]... [--jump-spam]
 // --fight cycles the attack buttons; --tour N warps to the next enemy
 // generator every N gameplay frames. AnimWatch (pc/animwatch.h) runs during
 // autotests and flags humanoids whose animation/state stops advancing.

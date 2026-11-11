@@ -604,6 +604,18 @@ Extraktion fehlgeschlagen: %s
 [FE_MODS]
 Mods
 
+[FE_GMODS]
+Mods
+
+[FE_MD_IJMP]
+Unendlich springen:
+
+[FE_MD_NCLP]
+Durch Waende gehen:
+
+[FE_MD_LIST]
+Installierte Mods
+
 [FE_MOD_NONE]
 Keine Mods installiert
 

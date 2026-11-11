@@ -132,9 +132,12 @@
     RechanTouch.show(show);
   }
 
-  function updateRotateHint() {
+  // Portrait on a phone/tablet: game in a 4:3 band at the top, touch
+  // controls underneath (handheld layout). Landscape keeps the full screen.
+  function updateOrientationLayout() {
     const portrait = window.innerHeight > window.innerWidth;
-    $('rotate-hint').classList.toggle('hidden', !(playing && isTouchDevice && portrait && !RechanTouch.editing));
+    document.body.classList.toggle('portrait-play', portrait && (playing || RechanTouch.editing));
+    RechanInput.resizeCanvas();
   }
 
   // --- touch editor ---
@@ -149,11 +152,12 @@
     $('ed-haptics').checked = !!s.haptics;
     selectForEditor(null);
     RechanTouch.setEditing(true, { onSelect: selectForEditor });
+    updateOrientationLayout();
   }
 
   function selectForEditor(c) {
     $('ed-selected').classList.toggle('disabled', !c);
-    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) + ' (' + c.sym + ')' : (c.sym || c.id)) : '—';
+    $('ed-name').textContent = c ? (c.label ? t('touch.' + c.label) : t(c.type === 'stick' ? 'stick' : 'dpad')) : '—';
     if (c) $('ed-size').value = c.size;
   }
 
@@ -162,7 +166,7 @@
     $('touch-editor').classList.add('hidden');
     document.body.classList.remove('editing-touch');
     if (playing) updateTouchVisibility(); else RechanTouch.show(false);
-    updateRotateHint();
+    updateOrientationLayout();
   }
 
   // --- settings sheet ---
@@ -237,7 +241,11 @@
     const minutes = Math.max(0.25, parseFloat(params.get('minutes') || '3'));
     const args = ['--autotest', String(parseInt(testLevel, 10) || 0),
                   '--frames', String(Math.round(minutes * 60 * fps)),
-                  '--fps', String(fps), '--fight', '--tour', String(parseInt(params.get('tour') || '450', 10))];
+                  '--fps', String(fps)];
+    // fight=0 / tour=0 turn off the scripted fight and the enemy tour.
+    if (params.get('fight') !== '0') args.push('--fight');
+    const tour = parseInt(params.get('tour') || '450', 10);
+    if (tour > 0) args.push('--tour', String(tour));
     if (params.get('petal')) args.push('--petal', params.get('petal'));
     if (params.get('dump')) args.push('--dump-interval', params.get('dump'));
     return args;
@@ -303,13 +311,10 @@
     RechanInput.setRenderScale(prefs.scale);
     RechanInput.start();
     updateTouchVisibility();
-    updateRotateHint();
+    updateOrientationLayout();
 
     if (!isIOS && isTouchDevice && document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
-    }
-    if (screen.orientation && screen.orientation.lock) {
-      screen.orientation.lock('landscape').catch(() => {});
     }
 
     if (testMode) {
@@ -422,7 +427,7 @@
       if (touchHiddenByPhysical) { touchHiddenByPhysical = false; updateTouchVisibility(); }
     }, { passive: true });
 
-    window.addEventListener('resize', updateRotateHint);
+    window.addEventListener('resize', updateOrientationLayout);
     // Prevent pinch-zoom / double-tap zoom on iOS while playing.
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('dblclick', (e) => { if (playing) e.preventDefault(); });

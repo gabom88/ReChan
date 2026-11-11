@@ -34,6 +34,7 @@ enum MenuPage : s32 {
     MenuPage_Sound,
 #if NEW_CHEATS
     MenuPage_Cheats,
+    MenuPage_GameplayMods,
 #endif
 #ifdef MOD_LOADER
     MenuPage_Mods,
@@ -105,6 +106,8 @@ enum EntryBinding : u8 {
     EntryBinding_CheatBobbleHead,
     EntryBinding_CheatStuntquake,
     EntryBinding_CheatMirrorWorld,
+    EntryBinding_ModInfiniteJump,
+    EntryBinding_ModNoClipWalls,
 #endif
 };
 

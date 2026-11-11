@@ -343,6 +343,22 @@ void Player::Think() {
 
     ProcessControl();
 
+#if NEW_CHEATS
+    // Mod "Infinite jumps": every fresh jump press while airborne starts a
+    // new jump from the current height.
+    if (IsCheatEnabled(CheatOption::InfiniteJump) && !(flags & TF_ON_GROUND) && g_inputManager && behaviour) {
+        const s32 state = actionState;
+        const bool airborne = state == AS_JUMP || state == AS_PAUSE /* running jump */ || state == AS_WALL_JUMP
+            || state == AS_FALL || state == AS_HARDFALL;
+        Button* jumpButton = g_inputManager->GetButtonForBit((u16)behaviour->padPort, 6);
+        if (airborne && jumpButton && jumpButton->duration == 1) {
+            velocity.y = 0;
+            contactForce.y = 0;
+            SetActionState(AS_JUMP, 0);
+        }
+    }
+#endif
+
     // Match PSX Think__6Player: update runSpeed from movement before
     // ProcessAction, since wall-context kicks use it to reject idle kicks.
     s64 dt = (s64)moveSpeed * (s64)deltaTime;

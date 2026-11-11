@@ -10,6 +10,7 @@
 #include "p3d/context.h"
 #include "pddi/pddidev.h"
 #include "pc/animwatch.h"
+#include "extra/cheats.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -27,7 +28,10 @@ static bool s_traceSpawns = false;
 static s32 s_killInterval = 0;
 static bool s_fight = false;     // cycle the attack buttons (press/release)
 static s32 s_tourInterval = 0;   // warp to the next enemy generator every N frames
-static s32 s_dumpInterval = 0;   // log every humanoid's state every N gameplay frames
+static s32 s_dumpInterval = 0;
+static bool s_jumpSpam = false;  // press/release jump every 6 frames
+static std::vector<std::string> s_cheats; // --cheat NAME (repeatable)
+static bool s_cheatsApplied = false;   // log every humanoid's state every N gameplay frames
 static s32 s_frames = 300;
 static s32 s_fps = 60;
 static u32 s_heldButtons = 0;
@@ -188,6 +192,12 @@ void AutoTest_ParseArgs(int argc, char** argv) {
         else if (std::strcmp(argv[i], "--fight") == 0) {
             s_fight = true;
         }
+        else if (std::strcmp(argv[i], "--cheat") == 0 && hasValue) {
+            s_cheats.push_back(argv[++i]);
+        }
+        else if (std::strcmp(argv[i], "--jump-spam") == 0) {
+            s_jumpSpam = true;
+        }
         else if (std::strcmp(argv[i], "--dump-interval") == 0 && hasValue) {
             s_dumpInterval = std::atoi(argv[++i]);
         }
@@ -260,6 +270,9 @@ u32 AutoTest_GetHeldButtons() {
         return 0;
     }
     u32 buttons = s_heldButtons;
+    if (s_jumpSpam && (s_playFrames % 6) < 3) {
+        buttons |= PsxPad::Cross;
+    }
     if (s_fight) {
         // 8-frame cadence: press for 4, release for 4, rotating through every
         // attack so the fighting system, hit reactions and their anim-end
@@ -313,6 +326,24 @@ bool AutoTest_Step(GameState state) {
     }
 
     ++s_playFrames;
+#if NEW_CHEATS
+    if (!s_cheatsApplied) {
+        s_cheatsApplied = true;
+        static const struct { const char* name; CheatOption opt; } kNames[] = {
+            { "godmode", CheatOption::GodMode }, { "onepunch", CheatOption::OnePunchMan },
+            { "heavenbound", CheatOption::HeavenBound }, { "infinitejump", CheatOption::InfiniteJump },
+            { "noclip", CheatOption::NoClipWalls },
+        };
+        for (const std::string& want : s_cheats) {
+            for (const auto& c : kNames) {
+                if (want == c.name) {
+                    SetCheatEnabled(c.opt, true);
+                    LOG_ALWAYS("[AutoTest] cheat enabled: %s", c.name);
+                }
+            }
+        }
+    }
+#endif
     // Long --fight runs: keep lives topped up so a death just respawns at the
     // checkpoint and the run keeps exercising the AI.
     if (s_fight && Player::s_player && Player::s_player->GetLivesLeft() < 3) {

@@ -619,7 +619,10 @@ void feCustomMenuMgr::BuildPages() {
 #if NEW_CHEATS
         Button("FE_CHEATS", EntryEvent_GoPage, MenuPage_Cheats),
 #endif
-#ifdef MOD_LOADER
+#if NEW_CHEATS
+        // Gameplay mods page; it also links to the installed (file) mods list.
+        Button("FE_GMODS", EntryEvent_GoPage, MenuPage_GameplayMods),
+#elif defined(MOD_LOADER)
         Button("FE_MODS", EntryEvent_GoPage, MenuPage_Mods),
 #endif
         Button("FE_BCK", EntryEvent_Back),
@@ -683,8 +686,24 @@ void feCustomMenuMgr::BuildPages() {
                });
 #endif
 
+#if NEW_CHEATS
+    auto& feGameplayMods = AddPage(MenuPage_GameplayMods, "FE_GMODS", "Menu_GameOption", MenuPage_Options, 0, false, -1, -1);
+    SetEntries(feGameplayMods, {
+        Toggle("FE_MD_IJMP", EntryBinding_ModInfiniteJump),
+        Toggle("FE_MD_NCLP", EntryBinding_ModNoClipWalls),
 #ifdef MOD_LOADER
+        Button("FE_MD_LIST", EntryEvent_GoPage, MenuPage_Mods),
+#endif
+        Button("FE_BCK", EntryEvent_Back),
+               });
+#endif
+
+#ifdef MOD_LOADER
+#if NEW_CHEATS
+    auto& feMods = AddPage(MenuPage_Mods, "FE_MODS", "Menu_GameOption", MenuPage_GameplayMods, 0, false,
+#else
     auto& feMods = AddPage(MenuPage_Mods, "FE_MODS", "Menu_GameOption", MenuPage_Options, 0, false,
+#endif
                            DEF_MODS_WINDOW_W, DEF_MODS_WINDOW_H);
     SetEntries(feMods, {
         Button("FE_BCK", EntryEvent_Back),
@@ -2889,6 +2908,8 @@ s32 feCustomMenuMgr::GetBoundValue(const Entry& e) const {
         case EntryBinding_CheatBobbleHead: return IsCheatEnabled(CheatOption::BobbleHead) ? 1 : 0;
         case EntryBinding_CheatStuntquake: return IsCheatEnabled(CheatOption::Stuntquake) ? 1 : 0;
         case EntryBinding_CheatMirrorWorld: return IsCheatEnabled(CheatOption::MirrorWorld) ? 1 : 0;
+        case EntryBinding_ModInfiniteJump: return IsCheatEnabled(CheatOption::InfiniteJump) ? 1 : 0;
+        case EntryBinding_ModNoClipWalls: return IsCheatEnabled(CheatOption::NoClipWalls) ? 1 : 0;
 #endif
         default: return 0;
     }
@@ -3000,6 +3021,12 @@ void feCustomMenuMgr::ApplyValue(const Entry& e, s32 v) {
     }
     else if (e.binding == EntryBinding_CheatHeavenBound) {
         SetCheatEnabled(CheatOption::HeavenBound, v != 0);
+    }
+    else if (e.binding == EntryBinding_ModInfiniteJump) {
+        SetCheatEnabled(CheatOption::InfiniteJump, v != 0);
+    }
+    else if (e.binding == EntryBinding_ModNoClipWalls) {
+        SetCheatEnabled(CheatOption::NoClipWalls, v != 0);
     }
     else if (e.binding == EntryBinding_CheatBobbleHead) {
         SetCheatEnabled(CheatOption::BobbleHead, v != 0);

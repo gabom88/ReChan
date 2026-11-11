@@ -604,6 +604,18 @@ Extraccion fallida: %s
 [FE_MODS]
 Mods
 
+[FE_GMODS]
+Mods
+
+[FE_MD_IJMP]
+Saltos infinitos:
+
+[FE_MD_NCLP]
+Atravesar paredes:
+
+[FE_MD_LIST]
+Mods instalados
+
 [FE_MOD_NONE]
 No hay mods instalados
 

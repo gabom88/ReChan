@@ -14,6 +14,7 @@ const SHELL = [
   'js/store.js',
   'js/extractor.js',
   'js/input.js',
+  'js/dpad-gemuboy.js',
   'js/touch.js',
   'js/app.js',
   'rechan.js',

@@ -51,13 +51,23 @@ Es el **mismo código C++ de ReChan** compilado a WebAssembly con Emscripten. **
 
 El juego permite reasignar las teclas desde sus propias opciones. El botón **☰** de arriba abre las opciones de la versión web.
 
+### Mods (Pausa → Opciones → Mods)
+
+- **Saltos infinitos:** Jackie vuelve a saltar en el aire cada vez que pulsas saltar.
+- **Atravesar paredes:** Jackie ignora las paredes. El suelo, las cajas y los obstáculos se siguen respetando, así que si atraviesas una pared exterior del nivel y detrás no hay suelo, caerás.
+- **Mods instalados:** la lista de mods de archivos de siempre (carpeta `~mods`).
+
+Los mods, igual que los trucos, se desactivan al cargar una partida. El truco **Rumbo al cielo** (Opciones → Trucos) hace que los enemigos derrotados asciendan al cielo; si está desactivado, simplemente desaparecen como en el original. El diagnóstico de **F8** indica qué trucos y mods están activos.
+
 ### Configurar el mando táctil
+
+Se puede jugar **en horizontal o en vertical**. En vertical, el juego ocupa la franja superior (4:3) y los controles quedan debajo, como en una consola portátil; cada orientación guarda su propia distribución. La cruceta es la misma de [GBoy-JS](https://github.com/gabom88/gemuboy-js), y los botones de acción muestran un dibujo de lo que hacen (puño, pie, salto, mano, escudo, etc.).
 
 Desde el lanzador (**Configurar mando táctil**) o durante la partida (**☰ → Configurar mando táctil**):
 
 - **Arrastra** cualquier control para moverlo.
 - **Tócalo** para seleccionarlo y cambiar su **tamaño** u **ocultarlo**.
-- Ajusta la **opacidad**, elige **joystick o cruceta**, y activa o desactiva las **etiquetas** y la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
+- Ajusta la **opacidad**, elige **cruceta o joystick**, y activa o desactiva las **etiquetas** y la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
 - **Mostrar todos** vuelve a mostrar los controles ocultos y **Restablecer** recupera la distribución por defecto.
 
 La configuración se guarda en el navegador. En modo **Automático**, el mando táctil se oculta al usar un teclado o mando físico y vuelve a aparecer al tocar la pantalla. También puedes fijarlo en **Siempre** o **Nunca**, y bajar la **resolución de render** si el dispositivo va justo.
@@ -134,6 +144,10 @@ Todos los cambios en C++ están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN
 - El audio usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
 - Como en PC, solo se admite la versión **NTSC-U (SLUS-00684)**.
 - El build web se compila con `-fno-strict-aliasing -fwrapv` para tener la misma semántica que MSVC (el compilador con el que se desarrolla ReChan). Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.
+
+### Modo de prueba
+
+En **☰ → Opciones → Modo de prueba** eliges un nivel (o todos) y la duración. El juego carga el nivel directamente, pelea solo, recorre todos los enemigos y al final indica si algún personaje se quedó atascado. Por URL: `?autotest=NIVEL&minutes=N` (con `fight=0` y `tour=0` se desactivan el combate y el recorrido). El mismo modo existe en el ejecutable (`--autotest N --fight --tour 450`), lo que permite comparar la versión web con la nativa.
 
 ### Si algo falla: diagnóstico
 

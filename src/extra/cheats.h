@@ -12,6 +12,9 @@ enum class CheatOption {
     BobbleHead,
     Stuntquake,
     MirrorWorld,
+    // Gameplay mods (Pause -> Options -> Mods)
+    InfiniteJump,   // jump again while airborne on every jump press
+    NoClipWalls,    // the player ignores wall collision (floor and boxes still apply)
 };
 
 bool IsCheatEnabled(CheatOption option);

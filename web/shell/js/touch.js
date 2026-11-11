@@ -83,7 +83,7 @@ const RechanTouch = (() => {
     },
   };
 
-  const DEFAULT_SETTINGS = { opacity: 0.7, mode: 'dpad', haptics: true, labels: true };
+  const DEFAULT_SETTINGS = { opacity: 0.7, mode: 'dpad', haptics: true };
 
   let layouts = {};
   let settings = {};
@@ -152,8 +152,8 @@ const RechanTouch = (() => {
         el.dataset.st = 'rest';
         el.innerHTML = (typeof DpadModelB !== 'undefined') ? DpadModelB.markup() : '';
       } else {
-        el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span><span class="tc-label"></span>`;
-        el.querySelector('.tc-label').textContent = t('touch.' + c.label);
+        // Icon only; the action name stays available to screen readers.
+        el.innerHTML = `<span class="tc-icon">${iconSvg(c.icon)}</span>`;
         el.setAttribute('aria-label', t('touch.' + c.label));
       }
       layer.appendChild(el);
@@ -166,7 +166,6 @@ const RechanTouch = (() => {
     if (!layer) return;
     const u = unit();
     layer.style.setProperty('--tc-opacity', settings.opacity);
-    layer.classList.toggle('tc-no-labels', !settings.labels);
     for (const c of controls()) {
       const el = elements.get(c.id);
       if (!el) continue;

@@ -67,7 +67,7 @@ Desde el lanzador (**Configurar mando táctil**) o durante la partida (**☰ →
 
 - **Arrastra** cualquier control para moverlo.
 - **Tócalo** para seleccionarlo y cambiar su **tamaño** u **ocultarlo**.
-- Ajusta la **opacidad**, elige **cruceta o joystick**, y activa o desactiva las **etiquetas** y la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
+- Ajusta la **opacidad**, elige **cruceta o joystick** y activa o desactiva la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
 - **Mostrar todos** vuelve a mostrar los controles ocultos y **Restablecer** recupera la distribución por defecto.
 
 La configuración se guarda en el navegador. En modo **Automático**, el mando táctil se oculta al usar un teclado o mando físico y vuelve a aparecer al tocar la pantalla. También puedes fijarlo en **Siempre** o **Nunca**, y bajar la **resolución de render** si el dispositivo va justo.

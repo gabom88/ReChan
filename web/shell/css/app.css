@@ -184,21 +184,9 @@ select {
   box-shadow: 0 3px 0 #0d0d10, 0 6px 14px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .15);
 }
 .tc-minor { background: radial-gradient(circle at 35% 30%, #3e3e46 0%, #26262c 65%, #1a1a1f 100%); }
-.tc-icon { width: 54%; height: 54%; display: block; }
+.tc-icon { width: 58%; height: 58%; display: block; }
 .tc-icon svg { width: 100%; height: 100%; display: block; }
-.tc-label {
-  position: absolute;
-  bottom: -1.35em;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: .78em;
-  font-weight: 600;
-  white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
-  opacity: .9;
-}
 .tc-small .tc-icon { width: 46%; height: 46%; }
-.tc-no-labels .tc-label { display: none; }
 .tc-pressed.tc-button {
   transform: translateY(2px) scale(.96);
   box-shadow: 0 1px 0 #0d0d10, 0 3px 8px rgba(0, 0, 0, .45), inset 0 2px 6px rgba(0, 0, 0, .5);

@@ -51,6 +51,18 @@
 #include "pddi/gles/glesrender.h"
 #endif
 
+#if defined(RC_PLATFORM_WEB)
+#include <unistd.h>
+#include <emscripten.h>
+#include "pddi/gles/glesrender.h"
+
+// Tells the page the engine failed before its first frame so the loader can
+// show the reason instead of a blank canvas.
+EM_JS(void, rcweb_fatal, (const char* message), {
+    if (Module.rcOnFatal) Module.rcOnFatal(UTF8ToString(message));
+});
+#endif
+
 static f32 sSavedMasterVolume = 1.0f;
 static bool sWindowedCaptureRequestedByClick = false;
 
@@ -153,6 +165,11 @@ static bool EnsureDataDirectory() {
 #endif
 
 int main(int argc, char** argv) {
+#if defined(RC_PLATFORM_WEB)
+    // web/rechan_web.pre.js mounts bundled data at /rechan/pc and the
+    // persistent saves at /rechan/userfiles; disc assets come from IndexedDB.
+    chdir("/rechan");
+#endif
 #if !defined(RC_PLATFORM_SWITCH)
     const bool dataDirFound = EnsureDataDirectory();
 #endif
@@ -243,6 +260,9 @@ int main(int argc, char** argv) {
 
     tContext* ctx = platform->CreateContext(init);
     if (!ctx) {
+#if defined(RC_PLATFORM_WEB)
+        rcweb_fatal(GetLastGlesInitError());
+#endif
 #if defined(RC_PLATFORM_SWITCH)
         consoleInit(NULL);
         printf("[rechan] CreateContext() FAILED: %s\n", GetLastGlesInitError());

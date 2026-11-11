@@ -6,7 +6,9 @@
 #include "pddi/pddishad.h"
 #include "pddi/pddidev.h"
 #include "pddi/pddishadersrc.h"
+#if defined(RC_PLATFORM_SWITCH)
 #include <switch.h>
+#endif
 #include <array>
 #include <string>
 #include <unordered_map>
@@ -154,6 +156,10 @@ const char* GetLastGlesInitError();
 // glesDisplay — EGL context/surface bound to libnx's default NWindow. No
 // monitor/fullscreen/borderless/cursor logic (meaningless on Switch's fixed
 // single-window applet model).
+//
+// On the web build (RC_PLATFORM_WEB) the same class wraps a WebGL2 context on
+// the page's <canvas>; keyboard/mouse/touch state comes from the page through
+// a shared input block (see pddi/gles/glesweb.cpp and web/rechan_web.lib.js).
 
 class glesDisplay : public pddiDisplay {
 public:
@@ -167,16 +173,27 @@ public:
     bool ShouldClose() override;
     void PollEvents() override;
 
+#if defined(RC_PLATFORM_WEB)
+    bool IsKeyDown(int key) override;
+    bool IsMouseButtonDown(int button) override;
+    void GetMousePosition(double& x, double& y) override;
+#else
     bool IsKeyDown(int) override { return false; }
     bool IsMouseButtonDown(int) override { return false; }
     void GetMousePosition(double& x, double& y) override { x = 0.0; y = 0.0; }
+#endif
 
     void SetIcon(int, int, const unsigned char*) override {}
 
     int  GetVideoModeCount() override { return 0; }
     void GetVideoMode(int, pddiVideoMode&) override {}
+#if defined(RC_PLATFORM_WEB)
+    void SetFullscreen(bool fullscreen) override;
+    bool IsFullscreen() override;
+#else
     void SetFullscreen(bool) override {}
     bool IsFullscreen() override { return false; }
+#endif
     void SetBorderless(bool) override {}
     bool IsBorderless() override { return false; }
     void SetResolution(int w, int h) override { width = w; height = h; }
@@ -185,10 +202,16 @@ public:
     int  GetMSAA() override { return 0; }
     void SetWindowPos(int, int) override {}
 
+#if defined(RC_PLATFORM_WEB)
+    void SetTitle(const char* title) override;
+    void ShowCursor(bool visible) override;
+    void ClipCursor(bool clip) override;
+#else
     void SetTitle(const char*) override {}
 
     void ShowCursor(bool) override {}
     void ClipCursor(bool) override {}
+#endif
 
     void SetWndProc(pddiWndProc proc) override { wndProc = proc; }
 
@@ -198,6 +221,13 @@ public:
     void GetViewport(int& x, int& y, int& w, int& h) { x = 0; y = 0; w = width; h = height; }
 
 private:
+#if defined(RC_PLATFORM_WEB)
+    void DispatchWebEvents();
+    int webContext_ = 0; // EMSCRIPTEN_WEBGL_CONTEXT_HANDLE
+    bool lastFocused_ = true;
+    bool lastMouse_[8] = {};
+    float lastScroll_ = 0.0f;
+#endif
     void* eglDisplay_ = nullptr; // EGLDisplay
     void* eglContext_ = nullptr; // EGLContext
     void* eglSurface_ = nullptr; // EGLSurface
@@ -452,7 +482,9 @@ public:
     bool SetVibration(float, float) override { return false; }
 
 private:
+#if defined(RC_PLATFORM_SWITCH)
     PadState pad;
+#endif
     bool connected = false;
     u64 heldButtons = 0;
     float axes[GamepadAxis::COUNT] = {};

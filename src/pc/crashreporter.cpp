@@ -242,8 +242,9 @@ void CrashReporter::ShowFatalMessage(const char* title, const char* message) {
 #endif
 }
 
-#elif defined(RC_PLATFORM_SWITCH)
+#elif defined(RC_PLATFORM_SWITCH) || defined(RC_PLATFORM_WEB)
 
+// Web: the browser console already reports aborts and wasm traps with a stack.
 // Deliberately minimal no-op for this toolchain-validation milestone: no
 // <execinfo.h> (glibc-only, absent from newlib), no fork()/execlp() (no
 // process model on Horizon OS), no sigaction-based fault handling (Switch

@@ -381,7 +381,14 @@ void PsxDiscExtractor::ScanAsync() {
     }
     m_state = State::Scanning;
     m_error.clear();
+#if defined(RC_PLATFORM_WEB)
+    // Single-threaded web build. The page normally extracts the disc before
+    // the engine starts (web/shell/js/extractor.js); this in-game path only
+    // runs if assets went missing, and scanning is cheap enough to do inline.
+    ScanThreadFunc();
+#else
     m_workerThread = std::thread(&PsxDiscExtractor::ScanThreadFunc, this);
+#endif
 }
 
 void PsxDiscExtractor::StartExtractAsync() {
@@ -393,7 +400,11 @@ void PsxDiscExtractor::StartExtractAsync() {
     m_bytesDone = 0;
     m_bytesTotal = 0;
     m_error.clear();
+#if defined(RC_PLATFORM_WEB)
+    ExtractThreadFunc(m_candidates[0]);
+#else
     m_workerThread = std::thread(&PsxDiscExtractor::ExtractThreadFunc, this, m_candidates[0]);
+#endif
 }
 
 void PsxDiscExtractor::ScanThreadFunc() {

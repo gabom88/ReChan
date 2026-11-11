@@ -54,7 +54,7 @@ namespace p3d::io {
         // a path that's about to be created).
         bool Open(const std::string& path, Mode mode, bool resolveCase = true);
         void Close();
-        bool IsOpen() const { return m_file != nullptr; }
+        bool IsOpen() const { return m_file != nullptr || m_web != nullptr; }
 
         int64_t Size() const { return m_size; }
         int64_t Tell() const;
@@ -66,7 +66,15 @@ namespace p3d::io {
     private:
         void* m_file = nullptr; // FILE*
         int64_t m_size = -1;
+        // Web build only: read handle onto an extracted asset stored in the
+        // browser (IndexedDB), see WebAsset* in fileio.cpp. nullptr elsewhere.
+        void* m_web = nullptr;
+        bool m_writing = false;
     };
+
+    // Web build only: asks the page to persist userfiles/ (saves, settings)
+    // to IndexedDB. No-op on other platforms.
+    void PersistUserFiles();
 
     std::string GetExecutablePath();
     std::string GetExecutableDir();

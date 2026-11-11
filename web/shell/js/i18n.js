@@ -1,0 +1,128 @@
+// i18n.js — launcher / overlay strings (Spanish and English).
+'use strict';
+
+const RechanI18n = (() => {
+  const STRINGS = {
+    es: {
+      subtitle: 'Jackie Chan Stuntmaster, reimplementado y jugable en tu navegador.',
+      checking: 'Comprobando datos guardados…',
+      needDisc: 'Para jugar necesitas tu propia copia de Jackie Chan Stuntmaster (NTSC-U, SLUS-00684). Elige la imagen del disco (.bin o .iso) y ReChan extraerá solo los archivos que necesita.',
+      chooseDisc: 'Elegir imagen del disco (.bin / .iso)',
+      privacy: 'La imagen se lee en tu dispositivo: no se sube a ningún servidor. Cuando termine la extracción ya no la necesitarás.',
+      scanning: 'Leyendo la imagen del disco…',
+      extracting: 'Extrayendo assets… {pct}%',
+      saving: 'Guardando en el navegador…',
+      extracted: 'Listo: {files} archivos ({size}).',
+      retry: 'Elegir otra imagen',
+      play: 'Jugar',
+      touchConfig: 'Configurar mando táctil',
+      settings: 'Opciones',
+      assetsInfo: 'Assets del disco {serial}: {files} archivos, {size}.',
+      iosInstall: 'En iPhone/iPad: toca Compartir → «Añadir a pantalla de inicio» para jugar a pantalla completa y conservar los datos.',
+      credits: 'Basado en ReChan, creado por',
+      touchShow: 'Mando táctil',
+      touchAuto: 'Automático',
+      on: 'Siempre',
+      off: 'Nunca',
+      quality: 'Resolución de render',
+      language: 'Idioma',
+      fullscreen: 'Pantalla completa',
+      deleteAssets: 'Borrar assets extraídos',
+      confirmDelete: '¿Borrar los assets extraídos? Tendrás que volver a elegir la imagen del disco. Tus partidas guardadas se conservan.',
+      close: 'Cerrar',
+      editHelp: 'Arrastra los controles para moverlos. Toca uno para seleccionarlo y cambiar su tamaño.',
+      size: 'Tamaño',
+      hide: 'Ocultar',
+      opacity: 'Opacidad',
+      stick: 'Joystick',
+      dpad: 'Cruceta',
+      labels: 'Etiquetas',
+      haptics: 'Vibración',
+      showAll: 'Mostrar todos',
+      reset: 'Restablecer',
+      done: 'Listo',
+      rotate: 'Gira el dispositivo para jugar en horizontal',
+      storage: 'Espacio usado en el navegador: {used} de {quota}.',
+      fatal: 'No se pudo iniciar el juego: {msg}',
+      noWebgl: 'Tu navegador no soporta WebGL2. Usa Safari 15+, Chrome o Firefox actualizados.',
+      fullscreenUnsupported: 'Pantalla completa no disponible aquí. En iPhone, añade ReChan a la pantalla de inicio.',
+      'touch.jump': 'Saltar', 'touch.grab': 'Agarrar', 'touch.punch': 'Puño', 'touch.kick': 'Patada',
+      'touch.counter': 'Contra', 'touch.roll': 'Rodar', 'touch.status': 'Estado', 'touch.strafe': 'Lateral',
+    },
+    en: {
+      subtitle: 'Jackie Chan Stuntmaster, reimplemented and playable in your browser.',
+      checking: 'Checking saved data…',
+      needDisc: 'You need your own copy of Jackie Chan Stuntmaster (NTSC-U, SLUS-00684). Pick the disc image (.bin or .iso) and ReChan will extract only the files it needs.',
+      chooseDisc: 'Choose disc image (.bin / .iso)',
+      privacy: 'The image is read on your device: it is never uploaded. Once extraction finishes you no longer need it.',
+      scanning: 'Reading the disc image…',
+      extracting: 'Extracting assets… {pct}%',
+      saving: 'Saving to the browser…',
+      extracted: 'Done: {files} files ({size}).',
+      retry: 'Choose another image',
+      play: 'Play',
+      touchConfig: 'Configure touch controls',
+      settings: 'Settings',
+      assetsInfo: 'Assets from disc {serial}: {files} files, {size}.',
+      iosInstall: 'On iPhone/iPad: tap Share → "Add to Home Screen" to play full screen and keep your data.',
+      credits: 'Based on ReChan, created by',
+      touchShow: 'Touch controls',
+      touchAuto: 'Automatic',
+      on: 'Always',
+      off: 'Never',
+      quality: 'Render resolution',
+      language: 'Language',
+      fullscreen: 'Full screen',
+      deleteAssets: 'Delete extracted assets',
+      confirmDelete: 'Delete the extracted assets? You will need to pick the disc image again. Your saves are kept.',
+      close: 'Close',
+      editHelp: 'Drag controls to move them. Tap one to select it and change its size.',
+      size: 'Size',
+      hide: 'Hide',
+      opacity: 'Opacity',
+      stick: 'Joystick',
+      dpad: 'D-pad',
+      labels: 'Labels',
+      haptics: 'Vibration',
+      showAll: 'Show all',
+      reset: 'Reset',
+      done: 'Done',
+      rotate: 'Rotate your device to play in landscape',
+      storage: 'Browser storage used: {used} of {quota}.',
+      fatal: 'The game could not start: {msg}',
+      noWebgl: 'Your browser does not support WebGL2. Use an up-to-date Safari 15+, Chrome or Firefox.',
+      fullscreenUnsupported: 'Full screen is not available here. On iPhone, add ReChan to your Home Screen.',
+      'touch.jump': 'Jump', 'touch.grab': 'Grab', 'touch.punch': 'Punch', 'touch.kick': 'Kick',
+      'touch.counter': 'Counter', 'touch.roll': 'Roll', 'touch.status': 'Status', 'touch.strafe': 'Strafe',
+    },
+  };
+
+  let lang = 'es';
+  try {
+    lang = localStorage.getItem('rechan.lang') ||
+      ((navigator.language || 'es').toLowerCase().startsWith('es') ? 'es' : 'en');
+  } catch (_) { /* ignore */ }
+  if (!STRINGS[lang]) lang = 'en';
+
+  function t(key, vars) {
+    let s = (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || key;
+    if (vars) for (const k in vars) s = s.replace('{' + k + '}', vars[k]);
+    return s;
+  }
+
+  function apply(root) {
+    document.documentElement.lang = lang;
+    (root || document).querySelectorAll('[data-i18n]').forEach((el) => {
+      el.textContent = t(el.dataset.i18n);
+    });
+  }
+
+  function setLang(l) {
+    if (!STRINGS[l]) return;
+    lang = l;
+    try { localStorage.setItem('rechan.lang', l); } catch (_) { /* ignore */ }
+    apply();
+  }
+
+  return { t, apply, setLang, get lang() { return lang; } };
+})();

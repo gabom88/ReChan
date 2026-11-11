@@ -1,0 +1,52 @@
+# Builds the WebAssembly port (web/) and publishes it to GitHub Pages.
+# One-time setup: Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+name: Web (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'vendor/libp3d/**'
+      - 'vendor/miniaudio/**'
+      - 'res/**'
+      - 'web/**'
+      - '.github/workflows/web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 7.0.0
+          actions-cache-folder: emsdk-cache
+
+      - name: Build
+        run: make -C web -j"$(nproc)" BUILD_ID="${GITHUB_SHA::12}"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

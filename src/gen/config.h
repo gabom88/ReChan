@@ -61,7 +61,7 @@
 #define REAL_TEXTURE_RENDERING 1
 
 // Downloads a release archive and self-restarts the process
-#if defined(RC_PLATFORM_NULL)
+#if defined(RC_PLATFORM_NULL) || defined(RC_PLATFORM_WEB)
 #define AUTO_UPDATER 0
 #else
 #define AUTO_UPDATER (CUSTOM_MENU && 1)

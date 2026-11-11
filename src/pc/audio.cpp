@@ -871,8 +871,15 @@ bool AudioEngine::Init() {
     config.playback.channels = 0; // Native device channel layout.
     config.sampleRate = 0; // use native device rate to avoid resampling
     config.dataCallback = audioCallback;
+#if defined(RC_PLATFORM_WEB)
+    // Web Audio (ScriptProcessorNode) runs its callback on the main thread
+    // between frames, so it needs a deeper buffer than a native device.
+    config.periodSizeInFrames = 2048;
+    config.periods = 2;
+#else
     config.periodSizeInFrames = 512;
     config.periods = 3;
+#endif
 
     if (ma_device_init(nullptr, &config, &g_device) != MA_SUCCESS) {
         LOG("AudioEngine: failed to init device");

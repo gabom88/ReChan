@@ -293,6 +293,7 @@ bool SaveGameWriteAutosave() {
 bool SaveGameDeleteAutosave() {
     std::error_code ec;
     std::filesystem::remove(kAutosavePath, ec);
+    p3d::io::PersistUserFiles();
     return !ec;
 }
 
@@ -304,6 +305,7 @@ bool SaveGameDeleteSlot(s32 slotIndex) {
 
     std::error_code ec;
     std::filesystem::remove(path, ec);
+    p3d::io::PersistUserFiles();
     return !ec;
 }
 

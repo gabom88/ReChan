@@ -11,6 +11,11 @@
 #if defined(_WIN32)
 #define NOMINMAX
 #include <windows.h>
+#elif defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#include <cstring>
+#include <limits.h>
+#include <unistd.h>
 #else
 #include <limits.h>
 #include <unistd.h>
@@ -85,6 +90,130 @@ namespace p3d::io {
     }
 #endif
 
+
+#if defined(__EMSCRIPTEN__)
+    // ---------------------------------------------------------------------
+    // Web asset store.
+    //
+    // The disc assets are extracted by the page (web/shell/js/extractor.js)
+    // into IndexedDB, one Blob per file, keyed by its lower-case relative path
+    // ("xc/lev01.lcf"). Nothing is copied into wasm memory up front -- an iPhone
+    // would not survive holding the whole disc in RAM. Instead, opens and
+    // reads are served lazily from those Blobs; reads are asynchronous in the
+    // browser, so they suspend the engine through Asyncify and resume once
+    // the bytes arrive. Small files are fetched whole on open, large ones
+    // (movies, sound banks) through a sliding read-ahead window.
+    //
+    // Everything else (bundled pc/ data, userfiles/ saves) lives in the
+    // regular Emscripten filesystem and is checked first.
+    // ---------------------------------------------------------------------
+    } // namespace p3d::io
+
+    EM_JS(double, rcweb_asset_size, (const char* path), {
+        return Module.rcAssets ? Module.rcAssets.size(UTF8ToString(path)) : -1;
+    });
+    EM_JS(int, rcweb_asset_is_dir, (const char* path), {
+        return (Module.rcAssets && Module.rcAssets.isDir(UTF8ToString(path))) ? 1 : 0;
+    });
+    // Returns a malloc'd "name\tD|F\n..." listing, or 0 when the directory is unknown.
+    EM_JS(char*, rcweb_asset_list, (const char* path), {
+        if (!Module.rcAssets) return 0;
+        var text = Module.rcAssets.list(UTF8ToString(path));
+        return text === null ? 0 : stringToNewUTF8(text);
+    });
+    EM_ASYNC_JS(int, rcweb_asset_read, (const char* path, double offset, int length, unsigned char* dst), {
+        if (!Module.rcAssets) return -1;
+        var bytes = await Module.rcAssets.read(UTF8ToString(path), offset, length);
+        if (!bytes) return -1;
+        HEAPU8.set(bytes, dst);
+        return bytes.length;
+    });
+    EM_JS(void, rcweb_persist_userfiles, (), {
+        if (Module.rcPersistUserFiles) Module.rcPersistUserFiles();
+    });
+
+    namespace p3d::io {
+    namespace {
+        constexpr int64_t kWebWholeFileLimit = 4 * 1024 * 1024;
+        constexpr int64_t kWebWindowSize = 1024 * 1024;
+
+        struct WebAsset {
+            std::string key;
+            int64_t size = 0;
+            int64_t pos = 0;
+            std::vector<uint8_t> window;
+            int64_t windowStart = 0;
+        };
+
+        std::string WebAssetKey(const std::string& path) {
+            std::string p = NormalizeSeparators(path);
+            if (p.rfind("/rechan/", 0) == 0) p = p.substr(8);
+            while (p.rfind("./", 0) == 0) p = p.substr(2);
+            while (!p.empty() && p.front() == '/') p.erase(p.begin());
+            std::string out;
+            out.reserve(p.size());
+            for (char c : p) {
+                if (c == '/' && !out.empty() && out.back() == '/') continue;
+                out.push_back((char)std::tolower((unsigned char)c));
+            }
+            while (!out.empty() && out.back() == '/') out.pop_back();
+            return out;
+        }
+
+        int64_t WebAssetSize(const std::string& path) {
+            const double size = rcweb_asset_size(WebAssetKey(path).c_str());
+            return size < 0 ? -1 : (int64_t)size;
+        }
+
+        bool WebAssetIsDir(const std::string& path) {
+            return rcweb_asset_is_dir(WebAssetKey(path).c_str()) != 0;
+        }
+
+        bool WebAssetFill(WebAsset& a, int64_t start, int64_t length) {
+            if (start >= a.size) {
+                a.window.clear();
+                a.windowStart = start;
+                return true;
+            }
+            length = std::min<int64_t>(length, a.size - start);
+            a.window.resize((size_t)length);
+            const int got = rcweb_asset_read(a.key.c_str(), (double)start, (int)length, a.window.data());
+            if (got < 0) {
+                a.window.clear();
+                return false;
+            }
+            a.window.resize((size_t)got);
+            a.windowStart = start;
+            return true;
+        }
+
+        size_t WebAssetRead(WebAsset& a, void* dst, size_t bytes) {
+            uint8_t* out = static_cast<uint8_t*>(dst);
+            size_t done = 0;
+            while (done < bytes && a.pos < a.size) {
+                const int64_t winEnd = a.windowStart + (int64_t)a.window.size();
+                if (a.pos < a.windowStart || a.pos >= winEnd) {
+                    const int64_t want = std::max<int64_t>(kWebWindowSize, (int64_t)(bytes - done));
+                    if (!WebAssetFill(a, a.pos, want) || a.window.empty()) break;
+                    continue;
+                }
+                const size_t avail = (size_t)(winEnd - a.pos);
+                const size_t n = std::min(avail, bytes - done);
+                std::memcpy(out + done, a.window.data() + (a.pos - a.windowStart), n);
+                done += n;
+                a.pos += (int64_t)n;
+            }
+            return done;
+        }
+    }
+
+    void PersistUserFiles() {
+        rcweb_persist_userfiles();
+    }
+#else
+    void PersistUserFiles() {}
+#endif
+
     std::string ResolvePath(const char* path) {
         if (!path || !path[0]) {
             return {};
@@ -93,7 +222,20 @@ namespace p3d::io {
     }
 
     std::string ResolvePath(const std::string& path) {
-#if !defined(__linux__)
+#if defined(__EMSCRIPTEN__)
+        std::string normalized = NormalizeSeparators(path);
+        std::error_code ec;
+        if (fs::exists(fs::path(normalized), ec)) {
+            return normalized;
+        }
+        // Extracted assets are stored lower-case, so their lower-case key is
+        // also their "on-disk spelling".
+        const std::string key = WebAssetKey(normalized);
+        if (WebAssetSize(key) >= 0 || WebAssetIsDir(key)) {
+            return key;
+        }
+        return normalized;
+#elif !defined(__linux__)
         return path;
 #else
         std::string normalized = NormalizeSeparators(path);
@@ -157,12 +299,22 @@ namespace p3d::io {
 
     bool FileExists(const std::string& path) {
         std::error_code ec;
+#if defined(__EMSCRIPTEN__)
+        if (fs::is_regular_file(path, ec)) return true;
+        return WebAssetSize(path) >= 0;
+#else
         return fs::is_regular_file(path, ec);
+#endif
     }
 
     bool DirExists(const std::string& path) {
         std::error_code ec;
+#if defined(__EMSCRIPTEN__)
+        if (fs::is_directory(path, ec)) return true;
+        return WebAssetIsDir(path);
+#else
         return fs::is_directory(path, ec);
+#endif
     }
 
     bool CreateDirectories(const std::string& path) {
@@ -185,6 +337,36 @@ namespace p3d::io {
             info.isDirectory = entry.is_directory(ec);
             result.push_back(std::move(info));
         };
+
+#if defined(__EMSCRIPTEN__)
+        if (!fs::is_directory(path, ec)) {
+            ec.clear();
+            // Web asset directory: walk the listing the page provides.
+            std::vector<std::string> pending{ path };
+            while (!pending.empty()) {
+                const std::string dir = pending.back();
+                pending.pop_back();
+                char* listing = rcweb_asset_list(WebAssetKey(dir).c_str());
+                if (!listing) continue;
+                const char* cursor = listing;
+                while (*cursor) {
+                    const char* tab = std::strchr(cursor, '\t');
+                    const char* nl = std::strchr(cursor, '\n');
+                    if (!tab || !nl || tab > nl) break;
+                    DirEntryInfo info;
+                    info.name.assign(cursor, tab);
+                    info.fullPath = JoinPath(dir, info.name);
+                    info.isDirectory = tab[1] == 'D';
+                    if (recursive && info.isDirectory) pending.push_back(info.fullPath);
+                    result.push_back(std::move(info));
+                    cursor = nl + 1;
+                }
+                std::free(listing);
+                if (!recursive) break;
+            }
+            return result;
+        }
+#endif
 
         if (recursive) {
             fs::recursive_directory_iterator iter(path, ec);
@@ -259,9 +441,11 @@ namespace p3d::io {
     }
 
     FileHandle::FileHandle(FileHandle&& other) noexcept
-        : m_file(other.m_file), m_size(other.m_size) {
+        : m_file(other.m_file), m_size(other.m_size), m_web(other.m_web), m_writing(other.m_writing) {
+        other.m_writing = false;
         other.m_file = nullptr;
         other.m_size = -1;
+        other.m_web = nullptr;
     }
 
     FileHandle& FileHandle::operator=(FileHandle&& other) noexcept {
@@ -269,8 +453,12 @@ namespace p3d::io {
             Close();
             m_file = other.m_file;
             m_size = other.m_size;
+            m_web = other.m_web;
+            m_writing = other.m_writing;
+            other.m_writing = false;
             other.m_file = nullptr;
             other.m_size = -1;
+            other.m_web = nullptr;
         }
         return *this;
     }
@@ -286,6 +474,24 @@ namespace p3d::io {
 
         FILE* file = std::fopen(resolvedPath.c_str(), modeStr);
         if (!file) {
+#if defined(__EMSCRIPTEN__)
+            if (mode == Mode::Read) {
+                const std::string key = WebAssetKey(resolvedPath);
+                const int64_t size = WebAssetSize(key);
+                if (size >= 0) {
+                    auto* asset = new WebAsset();
+                    asset->key = key;
+                    asset->size = size;
+                    if (size <= kWebWholeFileLimit && !WebAssetFill(*asset, 0, size)) {
+                        delete asset;
+                        return false;
+                    }
+                    m_web = asset;
+                    m_size = size;
+                    return true;
+                }
+            }
+#endif
             return false;
         }
 
@@ -297,18 +503,34 @@ namespace p3d::io {
         std::fseek(file, 0, SEEK_SET);
 
         m_file = file;
+        m_writing = (mode != Mode::Read);
         return true;
     }
 
     void FileHandle::Close() {
+#if defined(__EMSCRIPTEN__)
+        if (m_web) {
+            delete static_cast<WebAsset*>(m_web);
+            m_web = nullptr;
+        }
+#endif
         if (m_file) {
             std::fclose(static_cast<FILE*>(m_file));
             m_file = nullptr;
+            if (m_writing) {
+                PersistUserFiles();
+            }
         }
+        m_writing = false;
         m_size = -1;
     }
 
     int64_t FileHandle::Tell() const {
+#if defined(__EMSCRIPTEN__)
+        if (m_web) {
+            return static_cast<const WebAsset*>(m_web)->pos;
+        }
+#endif
         if (!m_file) {
             return -1;
         }
@@ -316,6 +538,17 @@ namespace p3d::io {
     }
 
     bool FileHandle::Seek(int64_t offset, int whence) {
+#if defined(__EMSCRIPTEN__)
+        if (m_web) {
+            auto* a = static_cast<WebAsset*>(m_web);
+            int64_t target = offset;
+            if (whence == SEEK_CUR) target = a->pos + offset;
+            else if (whence == SEEK_END) target = a->size + offset;
+            if (target < 0) return false;
+            a->pos = target;
+            return true;
+        }
+#endif
         if (!m_file) {
             return false;
         }
@@ -323,6 +556,11 @@ namespace p3d::io {
     }
 
     size_t FileHandle::Read(void* dst, size_t bytes) {
+#if defined(__EMSCRIPTEN__)
+        if (m_web) {
+            return WebAssetRead(*static_cast<WebAsset*>(m_web), dst, bytes);
+        }
+#endif
         if (!m_file) {
             return 0;
         }

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>ReChan Web</title>
+  <meta name="description" content="ReChan: reimplementación de Jackie Chan Stuntmaster, jugable en el navegador. Requiere tu propia copia del juego.">
+  <meta name="theme-color" content="#14141a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ReChan">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/rechan-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <canvas id="canvas" tabindex="-1" aria-label="ReChan"></canvas>
+  <div id="touch-layer" class="tc-hidden"></div>
+
+  <button id="menu-btn" class="hidden" aria-label="Menu">☰</button>
+
+  <!-- Launcher -->
+  <main id="launcher">
+    <div class="card">
+      <img class="logo" src="icons/rechan-512.png" alt="" width="120" height="120">
+      <h1>ReChan <span class="tag">Web</span></h1>
+      <p class="subtitle" data-i18n="subtitle"></p>
+
+      <section id="panel-loading" class="panel">
+        <p class="status" data-i18n="checking"></p>
+      </section>
+
+      <section id="panel-disc" class="panel hidden">
+        <p data-i18n="needDisc"></p>
+        <label class="btn primary file-btn">
+          <input id="disc-input" type="file" accept=".bin,.iso,.img,application/octet-stream">
+          <span data-i18n="chooseDisc"></span>
+        </label>
+        <p class="hint" data-i18n="privacy"></p>
+      </section>
+
+      <section id="panel-extract" class="panel hidden">
+        <p class="status" id="extract-status"></p>
+        <div class="progress"><div id="extract-bar"></div></div>
+        <p class="hint mono" id="extract-file"></p>
+      </section>
+
+      <section id="panel-error" class="panel hidden">
+        <p class="error" id="error-text"></p>
+        <button class="btn" id="error-retry" data-i18n="retry"></button>
+      </section>
+
+      <section id="panel-ready" class="panel hidden">
+        <button class="btn primary big" id="play-btn" data-i18n="play"></button>
+        <div class="row">
+          <button class="btn" id="touch-config-btn" data-i18n="touchConfig"></button>
+          <button class="btn" id="settings-btn" data-i18n="settings"></button>
+        </div>
+        <p class="hint" id="assets-info"></p>
+      </section>
+
+      <p class="hint ios-hint hidden" id="ios-hint" data-i18n="iosInstall"></p>
+      <footer>
+        <span data-i18n="credits"></span>
+        <a href="https://github.com/SilverwireGames/ReChan" target="_blank" rel="noopener">SilverwireGames/ReChan</a>
+      </footer>
+    </div>
+  </main>
+
+  <!-- Settings / in-game menu -->
+  <div id="settings" class="sheet hidden" role="dialog" aria-modal="true">
+    <div class="sheet-body">
+      <h2 data-i18n="settings"></h2>
+      <label class="opt"><span data-i18n="touchShow"></span>
+        <select id="opt-touch">
+          <option value="auto" data-i18n="touchAuto"></option>
+          <option value="on" data-i18n="on"></option>
+          <option value="off" data-i18n="off"></option>
+        </select>
+      </label>
+      <label class="opt"><span data-i18n="quality"></span>
+        <select id="opt-scale">
+          <option value="1">100%</option>
+          <option value="0.85">85%</option>
+          <option value="0.7">70%</option>
+          <option value="0.5">50%</option>
+        </select>
+      </label>
+      <label class="opt"><span data-i18n="language"></span>
+        <select id="opt-lang">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <div class="row wrap">
+        <button class="btn" id="opt-edit-touch" data-i18n="touchConfig"></button>
+        <button class="btn" id="opt-fullscreen" data-i18n="fullscreen"></button>
+      </div>
+      <div class="row wrap">
+        <button class="btn danger" id="opt-delete" data-i18n="deleteAssets"></button>
+      </div>
+      <p class="hint" id="storage-info"></p>
+      <button class="btn primary" id="settings-close" data-i18n="close"></button>
+    </div>
+  </div>
+
+  <!-- Touch layout editor toolbar -->
+  <div id="touch-editor" class="hidden">
+    <p class="hint" data-i18n="editHelp"></p>
+    <div class="ed-row" id="ed-selected">
+      <span id="ed-name">—</span>
+      <label><span data-i18n="size"></span> <input type="range" id="ed-size" min="0.06" max="0.6" step="0.01"></label>
+      <button class="btn small" id="ed-hide" data-i18n="hide"></button>
+    </div>
+    <div class="ed-row">
+      <label><span data-i18n="opacity"></span> <input type="range" id="ed-opacity" min="0.15" max="1" step="0.05"></label>
+      <select id="ed-mode">
+        <option value="stick" data-i18n="stick"></option>
+        <option value="dpad" data-i18n="dpad"></option>
+      </select>
+      <label class="chk"><input type="checkbox" id="ed-labels"> <span data-i18n="labels"></span></label>
+      <label class="chk"><input type="checkbox" id="ed-haptics"> <span data-i18n="haptics"></span></label>
+    </div>
+    <div class="ed-row">
+      <button class="btn small" id="ed-showall" data-i18n="showAll"></button>
+      <button class="btn small" id="ed-reset" data-i18n="reset"></button>
+      <button class="btn small primary" id="ed-done" data-i18n="done"></button>
+    </div>
+  </div>
+
+  <div id="rotate-hint" class="hidden"><div>⟳</div><p data-i18n="rotate"></p></div>
+  <div id="toast" class="hidden"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/extractor.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/touch.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

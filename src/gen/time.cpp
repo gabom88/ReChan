@@ -2,6 +2,9 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
+#if defined(RC_PLATFORM_WEB)
+#include <emscripten.h>
+#endif
 
 // PSX: gp-relative global
 Time* g_time = nullptr;
@@ -84,7 +87,12 @@ f64 Time::GetTimeInSeconds() {
 
 void Time::Sleep(f32 seconds) {
     if (seconds > 0.0f) {
+#if defined(RC_PLATFORM_WEB)
+        // Yield to the browser instead of blocking its only thread.
+        emscripten_sleep((unsigned int)(seconds * 1000.0f));
+#else
         std::this_thread::sleep_for(std::chrono::duration<f32>(seconds));
+#endif
     }
 }
 
@@ -93,6 +101,18 @@ void Time::WaitForFrameEnd(f64 frameStart) const {
     if (target <= 0.0f) {
         return;
     }
+#if defined(RC_PLATFORM_WEB)
+    // SwapBuffers already waits for requestAnimationFrame, which paces the
+    // loop to the display. Only sleep (yielding to the page) when the target
+    // frame rate is lower than the display's, and never spin.
+    {
+        const f64 remaining = (frameStart + (f64)target) - GetTimeInSeconds();
+        if (remaining > 0.002) {
+            emscripten_sleep((unsigned int)(remaining * 1000.0));
+        }
+        return;
+    }
+#endif
 
     // Adaptive 1ms sleep estimator keeps limiter accurate across platforms,
     // including schedulers with coarse default sleep granularity.

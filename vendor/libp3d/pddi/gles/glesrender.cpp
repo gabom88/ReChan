@@ -586,11 +586,16 @@ bool glesRenderTarget::Resize(int w, int h) {
 
 // glesDisplay
 
-static char s_glesInitError[160] = "";
+char s_glesInitError[160] = "";
 
 const char* GetLastGlesInitError() {
     return s_glesInitError;
 }
+
+// The web build supplies its own display (WebGL2 canvas) and gamepad
+// (Gamepad API + touch overlay) in glesweb.cpp; everything else in this file
+// -- shaders, textures, render targets, draw paths -- is shared verbatim.
+#if !defined(RC_PLATFORM_WEB)
 
 glesDisplay::glesDisplay() = default;
 
@@ -723,6 +728,7 @@ void glesDisplay::PollEvents() {
 bool glesDisplay::ShouldClose() {
     return shouldClose;
 }
+#endif // !RC_PLATFORM_WEB
 
 // glesContext
 
@@ -1668,6 +1674,7 @@ pddiDevice* pddiCreate() {
     return new glesDevice();
 }
 
+#if !defined(RC_PLATFORM_WEB)
 // glesGamepad — real libnx PadState-backed implementation. Single
 // player-1 standard pad; the menu is single-player only.
 
@@ -1730,3 +1737,4 @@ float glesGamepad::GetAxis(int axis) const {
     }
     return axes[axis];
 }
+#endif // !RC_PLATFORM_WEB

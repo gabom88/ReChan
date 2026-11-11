@@ -9,6 +9,7 @@
 #include "gen/time.h"
 #include "p3d/context.h"
 #include "pddi/pddidev.h"
+#include "pc/animwatch.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -24,6 +25,8 @@ static s32 s_petalIndex = 0;
 static s32 s_warpGenerator = -1;
 static bool s_traceSpawns = false;
 static s32 s_killInterval = 0;
+static bool s_fight = false;     // cycle the attack buttons (press/release)
+static s32 s_tourInterval = 0;   // warp to the next enemy generator every N frames
 static s32 s_frames = 300;
 static s32 s_fps = 60;
 static u32 s_heldButtons = 0;
@@ -110,6 +113,44 @@ static void WarpToGenerator(s32 wanted) {
     LOG_ALWAYS("[AutoTest] Generator %d not found (%d in level)", wanted, index);
 }
 
+// --tour: put the player next to the Nth living enemy (wrapping), so a single
+// run fights every enemy type a level has, not just the first encounter.
+static void TourToNextEnemy(s32 visit) {
+    Player* player = Player::s_player;
+    if (!g_ai || !player) {
+        return;
+    }
+    s32 count = 0;
+    for (ccMinNode* n = g_ai->humanoidList.head; n; n = n->next) {
+        Thing* t = static_cast<Thing*>(n);
+        if (t != player && !(t->flags & TF_DEAD) && t->model) ++count;
+    }
+    if (count == 0) {
+        LOG_ALWAYS("[AutoTest] Tour: no living enemies left");
+        return;
+    }
+    const s32 wanted = visit % count;
+    s32 index = 0;
+    for (ccMinNode* n = g_ai->humanoidList.head; n; n = n->next) {
+        Thing* t = static_cast<Thing*>(n);
+        if (t == player || (t->flags & TF_DEAD) || !t->model) continue;
+        if (index++ != wanted) continue;
+
+        LVector target = t->pos;
+        target.x += 400;
+        player->pos = target;
+        player->homePos = target;
+        player->UpdatePosition();
+        if (g_blockManager) {
+            const u16 block = g_blockManager->GetBlockNumber(target);
+            player->blockNum = (block != 4096) ? block : t->blockNum;
+        }
+        LOG_ALWAYS("[AutoTest] Tour: warped next to enemy %d/%d type=%u at (%d,%d,%d)",
+                   wanted + 1, count, (u32)t->thingType, target.x, target.y, target.z);
+        return;
+    }
+}
+
 static void CaptureOverlay() {
     if (!s_captureRequested || s_captureDone) {
         return;
@@ -142,6 +183,12 @@ void AutoTest_ParseArgs(int argc, char** argv) {
         }
         else if (std::strcmp(argv[i], "--kill-interval") == 0 && hasValue) {
             s_killInterval = std::atoi(argv[++i]);
+        }
+        else if (std::strcmp(argv[i], "--fight") == 0) {
+            s_fight = true;
+        }
+        else if (std::strcmp(argv[i], "--tour") == 0 && hasValue) {
+            s_tourInterval = std::atoi(argv[++i]);
         }
         else if (std::strcmp(argv[i], "--trace-spawns") == 0) {
             s_traceSpawns = true;
@@ -205,7 +252,25 @@ f32 AutoTest_GetFixedDeltaTime() {
 }
 
 u32 AutoTest_GetHeldButtons() {
-    return (s_enabled && s_playFrames > 0) ? s_heldButtons : 0;
+    if (!s_enabled || s_playFrames <= 0) {
+        return 0;
+    }
+    u32 buttons = s_heldButtons;
+    if (s_fight) {
+        // 8-frame cadence: press for 4, release for 4, rotating through every
+        // attack so the fighting system, hit reactions and their anim-end
+        // callbacks all get exercised on both sides.
+        static const u32 kAttacks[] = {
+            PsxPad::Square, PsxPad::Square, PsxPad::Triangle, PsxPad::Square,
+            PsxPad::Triangle, PsxPad::Triangle, PsxPad::Circle, PsxPad::Cross,
+            PsxPad::R1, PsxPad::L1,
+        };
+        const s32 slot = s_playFrames / 8;
+        if ((s_playFrames % 8) < 4) {
+            buttons |= kAttacks[slot % (s32)(sizeof(kAttacks) / sizeof(kAttacks[0]))];
+        }
+    }
+    return buttons;
 }
 
 void AutoTest_Fail(int exitCode, const char* reason) {
@@ -239,6 +304,9 @@ bool AutoTest_Step(GameState state) {
     if (s_playFrames == 30 && s_warpGenerator >= 0) {
         WarpToGenerator(s_warpGenerator);
     }
+    if (s_tourInterval > 0 && s_playFrames % s_tourInterval == 30) {
+        TourToNextEnemy(s_playFrames / s_tourInterval);
+    }
     if (s_killInterval > 0 && s_playFrames > 30 && (s_playFrames % s_killInterval) == 0 && g_ai) {
         for (ccMinNode* n = g_ai->humanoidList.head; n; n = n->next) {
             Thing* thing = static_cast<Thing*>(n);
@@ -259,6 +327,11 @@ bool AutoTest_Step(GameState state) {
     }
 
     LOG_ALWAYS("[AutoTest] Finished after %d gameplay frames", s_playFrames);
+    if (AnimWatch_GetStuckCount() > 0) {
+        LOG_ALWAYS("[AutoTest] FAILED: %d stuck humanoid episode(s), see [AnimWatch] lines",
+                   AnimWatch_GetStuckCount());
+        s_exitCode = 20;
+    }
     s_finished = true;
     return false;
 }

@@ -101,6 +101,23 @@
       <div class="row wrap">
         <button class="btn" id="opt-diag" data-i18n="diag"></button>
       </div>
+      <details class="testmode">
+        <summary data-i18n="testMode"></summary>
+        <p class="hint" data-i18n="testHelp"></p>
+        <label class="opt"><span data-i18n="testLevel"></span>
+          <select id="test-level">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="all" data-i18n="testAll"></option>
+          </select>
+        </label>
+        <label class="opt"><span data-i18n="testMinutes"></span>
+          <select id="test-minutes">
+            <option value="1">1</option><option value="3" selected>3</option><option value="10">10</option>
+          </select>
+        </label>
+        <button class="btn" id="test-start" data-i18n="testStart"></button>
+      </details>
       <div class="row wrap">
         <button class="btn danger" id="opt-delete" data-i18n="deleteAssets"></button>
       </div>
@@ -135,6 +152,7 @@
 
   <div id="rotate-hint" class="hidden"><div>⟳</div><p data-i18n="rotate"></p></div>
   <div id="toast" class="hidden"></div>
+  <div id="test-banner" class="hidden"></div>
 
   <script src="js/i18n.js"></script>
   <script src="js/store.js"></script>

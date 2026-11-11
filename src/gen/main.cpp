@@ -25,6 +25,7 @@
 #include "extra/assetexporter.h"
 #include "pc/apppaths.h"
 #include "pc/autotest.h"
+#include "pc/animwatch.h"
 #include "extra/gltfloader.h"
 #include "gen/model.h"
 #include "radlib/rtask.h"
@@ -60,6 +61,11 @@
 // show the reason instead of a blank canvas.
 EM_JS(void, rcweb_fatal, (const char* message), {
     if (Module.rcOnFatal) Module.rcOnFatal(UTF8ToString(message));
+});
+
+// --autotest finished (web test mode): hand the result to the page.
+EM_JS(void, rcweb_autotest_done, (int exitCode, int stuckCount), {
+    if (Module.rcOnAutotestDone) Module.rcOnAutotestDone(exitCode, stuckCount);
 });
 #endif
 
@@ -446,6 +452,10 @@ int main(int argc, char** argv) {
         jcsUpdateAmbience();
         jcsUpdateDialogCD();
 
+        if (game.GetState() == GameState::Play) {
+            AnimWatch_Step();
+        }
+
         if (!AutoTest_Step(game.GetState())) {
             break;
         }
@@ -462,6 +472,11 @@ int main(int argc, char** argv) {
         }
     }
 
+#if defined(RC_PLATFORM_WEB)
+    if (AutoTest_IsEnabled()) {
+        rcweb_autotest_done(AutoTest_GetExitCode(), AnimWatch_GetStuckCount());
+    }
+#endif
     LOG_ALWAYS("[main] Main loop ended: windowClosed=%d state=%d",
                p3d::display->ShouldClose() ? 1 : 0, static_cast<int>(game.GetState()));
 

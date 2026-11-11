@@ -227,6 +227,62 @@
     }
   }
 
+  // --- test mode (?autotest=LEVEL&minutes=N[&queue=1,2,3]) ---
+  const params = new URLSearchParams(location.search);
+  const testLevel = params.get('autotest');
+  const testMode = testLevel !== null;
+
+  function testArguments() {
+    const fps = 30;
+    const minutes = Math.max(0.25, parseFloat(params.get('minutes') || '3'));
+    const args = ['--autotest', String(parseInt(testLevel, 10) || 0),
+                  '--frames', String(Math.round(minutes * 60 * fps)),
+                  '--fps', String(fps), '--fight', '--tour', String(parseInt(params.get('tour') || '450', 10))];
+    if (params.get('petal')) args.push('--petal', params.get('petal'));
+    return args;
+  }
+
+  function showTestBanner(text, cls) {
+    const el = $('test-banner');
+    el.textContent = text;
+    el.className = cls || '';
+  }
+
+  function startTestFromMenu() {
+    const level = $('test-level').value;
+    const minutes = $('test-minutes').value;
+    const queue = level === 'all' ? [0, 1, 2, 3, 4, 5, 6] : [parseInt(level, 10)];
+    const url = new URL(location.href);
+    url.search = '';
+    url.searchParams.set('autotest', String(queue[0]));
+    url.searchParams.set('minutes', minutes);
+    if (queue.length > 1) url.searchParams.set('queue', queue.slice(1).join(','));
+    location.href = url.toString();
+  }
+
+  function onAutotestDone(exitCode, stuck) {
+    const summary = { level: testLevel, exitCode, stuck };
+    let results = [];
+    try { results = JSON.parse(sessionStorage.getItem('rechan.testResults') || '[]'); } catch (_) { /* ignore */ }
+    results.push(summary);
+    try { sessionStorage.setItem('rechan.testResults', JSON.stringify(results)); } catch (_) { /* ignore */ }
+    window.rcAutotestResult = summary;
+    const stuckLines = logRing.filter((l) => l.includes('[AnimWatch]')).join('\n');
+    const queue = (params.get('queue') || '').split(',').filter(Boolean);
+    const anyFail = results.some((r) => r.stuck > 0 || r.exitCode !== 0);
+    const lines = results.map((r) => `nivel ${r.level}: ${r.stuck > 0 ? r.stuck + ' atasco(s)' : 'ok'} (exit ${r.exitCode})`);
+    showTestBanner((anyFail ? t('testFail', { n: results.reduce((a, r) => a + r.stuck, 0) }) : t('testOk')) +
+      '\n' + lines.join('\n') + (stuckLines ? '\n' + stuckLines : ''), anyFail ? 'fail' : 'ok');
+    if (queue.length) {
+      const url = new URL(location.href);
+      url.searchParams.set('autotest', queue[0]);
+      url.searchParams.set('chain', '1');
+      url.searchParams.set('queue', queue.slice(1).join(','));
+      if (!queue.slice(1).length) url.searchParams.delete('queue');
+      setTimeout(() => { location.href = url.toString(); }, 1500);
+    }
+  }
+
   // --- engine ---
   function hasWebGL2() {
     try { return !!document.createElement('canvas').getContext('webgl2'); } catch (_) { return false; }
@@ -255,7 +311,17 @@
       screen.orientation.lock('landscape').catch(() => {});
     }
 
+    if (testMode) {
+      // A fresh test run (not a continuation of a level queue) starts a new report.
+      if (!params.has('chain')) {
+        try { sessionStorage.removeItem('rechan.testResults'); } catch (_) { /* ignore */ }
+      }
+      showTestBanner(t('testRunning', { level: testLevel }));
+    }
+
     window.Module = {
+      arguments: testMode ? testArguments() : [],
+      rcOnAutotestDone: onAutotestDone,
       canvas,
       rcAssets: RechanStore.engineApi,
       locateFile: (path) => path,
@@ -314,6 +380,7 @@
     $('opt-edit-touch').addEventListener('click', openTouchEditor);
     $('opt-fullscreen').addEventListener('click', toggleFullscreen);
     $('opt-diag').addEventListener('click', copyDiagnostics);
+    $('test-start').addEventListener('click', startTestFromMenu);
     // F8 copies diagnostics without leaving the game.
     window.addEventListener('keydown', (e) => {
       if (e.code === 'F8') { e.preventDefault(); copyDiagnostics(); }
@@ -365,7 +432,7 @@
 
     // ?autoplay skips the launcher when assets are present (handy from the home-screen icon).
     checkAssets().then(() => {
-      if (new URLSearchParams(location.search).has('autoplay') &&
+      if ((new URLSearchParams(location.search).has('autoplay') || testMode) &&
           !$('panel-ready').classList.contains('hidden')) startEngine();
     });
   }

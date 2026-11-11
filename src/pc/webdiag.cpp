@@ -12,6 +12,7 @@
 #include "ai/player.h"
 #include "pc/inputaction.h"
 #include "extra/version.h"
+#include "pc/animwatch.h"
 
 #include <emscripten.h>
 #include <cstdio>
@@ -71,6 +72,10 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
         }
         add("input.held=[%s] gamepadActive=%d", held.c_str(), g_actionInput->IsGamepadActive() ? 1 : 0);
     }
+
+    add("animwatch.stuckEpisodes=%d", AnimWatch_GetStuckCount());
+    out += "--- humanoids ---\n";
+    out += AnimWatch_Describe();
 
     char* result = static_cast<char*>(std::malloc(out.size() + 1));
     if (result) std::memcpy(result, out.c_str(), out.size() + 1);

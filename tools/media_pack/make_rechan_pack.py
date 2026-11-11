@@ -108,6 +108,26 @@ def describe(q: dict) -> str:
             f"+ audio {q['movie_audio']}  (≈ {estimate_mb(q):.0f} MB)")
 
 
+def fix_terminal() -> None:
+    """Restore a sane line mode (Enter = newline, echo on). A previous ffmpeg
+    run that was interrupted can leave the terminal printing ^M on Enter."""
+    try:
+        import termios
+        fd = sys.stdin.fileno()
+        attrs = termios.tcgetattr(fd)
+        attrs[0] |= termios.ICRNL                     # iflag: CR -> NL
+        attrs[0] &= ~termios.INLCR & ~termios.IGNCR
+        attrs[3] |= termios.ICANON | termios.ECHO     # lflag: line mode + echo
+        termios.tcsetattr(fd, termios.TCSANOW, attrs)
+    except Exception:  # Windows or not a terminal: nothing to fix
+        pass
+
+
+def read_line(prompt: str) -> str:
+    fix_terminal()
+    return input(prompt).replace("\r", "").strip()
+
+
 def ask(prompt: str, options: list[str], default: int) -> int:
     """Numbered menu; returns the chosen index (Enter = default)."""
     for i, opt in enumerate(options, 1):
@@ -115,7 +135,7 @@ def ask(prompt: str, options: list[str], default: int) -> int:
         print(f"  {i}) {opt}{mark}")
     while True:
         try:
-            ans = input(f"{prompt} [1-{len(options)}, Enter = {default + 1}]: ").strip()
+            ans = read_line(f"{prompt} [1-{len(options)}, Enter = {default + 1}]: ")
         except EOFError:
             return default
         if not ans:
@@ -148,7 +168,7 @@ def quality_menu() -> tuple[str, dict]:
 
 def ask_bin_path() -> Path:
     print("Arrastra aquí tu imagen .bin de Jackie Chan Stuntmaster y pulsa Enter:")
-    raw = input("> ").strip()
+    raw = read_line("> ")
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "'\"":
         raw = raw[1:-1]
     elif os.name != "nt":
@@ -167,8 +187,10 @@ def human(n: float) -> str:
 
 
 def run_ffmpeg(ffmpeg: str, args: list[str]) -> None:
-    proc = subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", *args],
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # -nostdin + no terminal stdin: otherwise ffmpeg switches the terminal to
+    # raw mode and can leave it broken (Enter prints ^M) when it is stopped.
+    proc = subprocess.run([ffmpeg, "-nostdin", "-y", "-hide_banner", "-loglevel", "error", *args],
+                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if proc.returncode != 0:
         lines = [l for l in proc.stderr.decode("utf-8", "replace").splitlines() if l.strip()]
         raise RuntimeError("ffmpeg: " + (lines[-1].strip() if lines else "failed"))
@@ -176,8 +198,10 @@ def run_ffmpeg(ffmpeg: str, args: list[str]) -> None:
 
 def check_ffmpeg(ffmpeg: str) -> None:
     try:
-        enc = subprocess.run([ffmpeg, "-hide_banner", "-encoders"], capture_output=True, text=True).stdout
-        dem = subprocess.run([ffmpeg, "-hide_banner", "-demuxers"], capture_output=True, text=True).stdout
+        enc = subprocess.run([ffmpeg, "-hide_banner", "-encoders"], stdin=subprocess.DEVNULL,
+                             capture_output=True, text=True).stdout
+        dem = subprocess.run([ffmpeg, "-hide_banner", "-demuxers"], stdin=subprocess.DEVNULL,
+                             capture_output=True, text=True).stdout
     except FileNotFoundError:
         sys.exit(f"Error: ffmpeg not found ({ffmpeg}). Install it or pass --ffmpeg PATH.")
     missing = [n for n, ok in (("libx264", "libx264" in enc), ("aac", " aac " in enc),

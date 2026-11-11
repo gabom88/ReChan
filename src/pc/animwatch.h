@@ -20,3 +20,4 @@ std::string AnimWatch_Describe();       // one line per live humanoid
 // flagged as stuck, its restarts are logged with a call stack (web build) so
 // the code path that keeps re-applying the animation can be identified.
 void AnimWatch_OnAnimRestart(const void* ownerThing, s32 animEnum);
+bool AnimWatch_IsTraceTarget(const void* ownerThing);

@@ -129,7 +129,7 @@ void AnimWatch_Step() {
             Format(buf, sizeof(buf), h, a);
             LOG_ALWAYS("[AnimWatch] STUCK %d frames: %s", t->sameFrames, buf);
             s_traceTarget = static_cast<const Thing*>(h);
-            s_traceBudget = 3;
+            s_traceBudget = 12;
         }
     }
 }
@@ -146,6 +146,10 @@ void AnimWatch_OnAnimRestart(const void* ownerThing, s32 animEnum) {
     emscripten_get_callstack(EM_LOG_C_STACK, stack, sizeof(stack));
     LOG_ALWAYS("%s", stack);
 #endif
+}
+
+bool AnimWatch_IsTraceTarget(const void* ownerThing) {
+    return ownerThing && ownerThing == s_traceTarget && s_traceBudget > 0;
 }
 
 std::string AnimWatch_Describe() {

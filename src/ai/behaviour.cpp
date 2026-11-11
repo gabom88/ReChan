@@ -1,4 +1,5 @@
 #include "ai/behaviour.h"
+#include "pc/animwatch.h"
 #include "ai/activezn.h"
 #include "ai/colfight.h"
 #include "ai/cominter.h"
@@ -2038,6 +2039,12 @@ void Behaviour::AiFollowPath(Behaviour* self) {
 
     const u32 nodeIndex = self->currentPathNodeIndex;
     const u32 distToNode = (u32)self->owner->DistanceFromPointXZ(path->positions[nodeIndex]);
+    if (AnimWatch_IsTraceTarget(static_cast<const Thing*>(self->owner))) {
+        LOG_ALWAYS("[AnimWatch] AiFollowPath node=%u/%d distXZ=%u nodePos=(%d,%d,%d) ownerPos=(%d,%d,%d)",
+                   nodeIndex, path->numPoints, distToNode,
+                   path->positions[nodeIndex].x, path->positions[nodeIndex].y, path->positions[nodeIndex].z,
+                   self->owner->pos.x, self->owner->pos.y, self->owner->pos.z);
+    }
 
     if (distToNode < PATH_NODE_REACHED_THRESHOLD) {
         activeZone->DoActionsAtNode(path, (s32)nodeIndex, self->owner);

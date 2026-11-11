@@ -1,4 +1,5 @@
 #include "ai/activezn.h"
+#include "pc/animwatch.h"
 #include "pc/autotest.h"
 #include "ai/behaviour.h"
 #include "ai/generator.h"
@@ -233,6 +234,12 @@ s32 ActiveZone::DoAICheck(LinearPath* path, s32 nodeIndex, Humanoid* humanoid) {
     }
 
     NodeAttribs* nodeAttrib = &path->nodeAttribs[nodeIndex];
+    if (AnimWatch_IsTraceTarget(static_cast<const Thing*>(humanoid))) {
+        char ids[64] = {};
+        for (s32 i = 0; i < nodeAttrib->count && i < 63; i++) ids[i] = (char)nodeAttrib->ids[i];
+        LOG_ALWAYS("[AnimWatch] DoActionsAtNode node=%d/%d ids='%s' action=%d", nodeIndex, path->numPoints, ids,
+                   humanoid->actionState);
+    }
     s32 pass = 1;
 
     // Grouped OR sets from PSX:

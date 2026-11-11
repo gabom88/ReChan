@@ -26,6 +26,7 @@ Load it in ReChan Web with "Cargar paquete ZIP (experimental)".
 from __future__ import annotations
 
 import argparse
+import hashlib
 import concurrent.futures as cf
 import json
 import os
@@ -69,7 +70,7 @@ import psx_audio as pa  # noqa: E402
 import extract_psx_bin as xbin  # noqa: E402
 
 PACK_FORMAT = "rechan-media-pack"
-PACK_VERSION = 1
+PACK_VERSION = 2  # 2: "aliases" (identical files stored once)
 EXPECTED_SERIAL = "SLUS-00684"
 
 # Quality presets: (music kbps, speech kbps, movie CRF, movie audio kbps).
@@ -328,16 +329,31 @@ def main() -> int:
             "notes": "Personal media pack generated from the owner's disc. Do not distribute.",
         }
 
+        # Identical files (e.g. sewer1.fag == sewer2.fag on the disc, and the
+        # songs converted from them) are stored once; the importer recreates
+        # the copies from manifest["aliases"].
+        entries = [(p, "assets/" + p.relative_to(assets).as_posix(), zipfile.ZIP_DEFLATED)
+                   for p in sorted(assets.rglob("*")) if p.is_file()]
+        entries += [(p, "media/" + p.relative_to(media).as_posix(), zipfile.ZIP_STORED)  # already compressed
+                    for p in sorted(media.rglob("*")) if p.is_file()]
+        seen: dict[str, str] = {}
+        aliases: dict[str, str] = {}
+        unique = []
+        for p, name, method in entries:
+            digest = hashlib.sha1(p.read_bytes()).hexdigest()
+            if p.stat().st_size > 0 and digest in seen:
+                aliases[name] = seen[digest]
+            else:
+                seen.setdefault(digest, name)
+                unique.append((p, name, method))
+        manifest["aliases"] = aliases
+
         print("Writing ZIP...")
         out_zip = args.output.resolve()
         with zipfile.ZipFile(out_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             z.writestr("manifest.json", json.dumps(manifest, indent=2))
-            for p in sorted(assets.rglob("*")):
-                if p.is_file():
-                    z.write(p, "assets/" + p.relative_to(assets).as_posix())
-            for p in sorted(media.rglob("*")):
-                if p.is_file():  # already compressed: store as-is
-                    z.write(p, "media/" + p.relative_to(media).as_posix(), compress_type=zipfile.ZIP_STORED)
+            for p, name, method in unique:
+                z.write(p, name, compress_type=method)
 
         zip_bytes = out_zip.stat().st_size
         print()
@@ -345,6 +361,7 @@ def main() -> int:
         print(f"  music tracks:  {len(summary['music'])}")
         print(f"  speech clips:  {summary['dialog']}")
         print(f"  movies:        {len(summary['movies'])}")
+        print(f"  duplicates:    {len(aliases)} stored once")
         print(f"  game files {human(original_bytes)} -> pack {human(zip_bytes)}")
         print_breakdown(out_zip)
         if summary["failed"]:

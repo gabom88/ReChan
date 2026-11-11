@@ -104,7 +104,7 @@ def decode_fag_song(data: bytes, start: int, end: int) -> array:
 
 def zero_fag_audio(data: bytearray) -> None:
     """Blank every song's ADPCM payload (header kept, size unchanged)."""
-    for r in fag_song_ranges(bytes(data[:4 + 64 * 8])):
+    for r in fag_song_ranges(bytes(data)):
         if r:
             data[r[0]:r[1]] = bytes(r[1] - r[0])
 

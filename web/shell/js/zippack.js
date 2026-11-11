@@ -67,7 +67,7 @@ const RechanZipPack = (() => {
     try { manifest = JSON.parse(await (await entryBlob(file, manifestEntry)).text()); }
     catch (_) { throw new PackError('notPack'); }
     if (manifest.format !== FORMAT || !(manifest.version >= 1)) throw new PackError('notPack');
-    if (manifest.version > 1) throw new PackError('newerPack');
+    if (manifest.version > 2) throw new PackError('newerPack');
     if (manifest.serial !== RechanExtractor.EXPECTED_SERIAL) throw new PackError('wrongSerial');
 
     const wanted = entries.filter((e) => !e.name.endsWith('/') &&
@@ -88,11 +88,21 @@ const RechanZipPack = (() => {
         batch = []; batchBytes = 0;
       }
     }
+    // v2: identical files are stored once in the ZIP; recreate the copies.
+    const byName = new Map(entries.map((e) => [e.name, e]));
+    const aliases = Object.entries(manifest.aliases || {});
+    for (const [alias, source] of aliases) {
+      const src = byName.get(source);
+      if (!src || !(alias.startsWith('assets/') || alias.startsWith('media/'))) continue;
+      const key = alias.startsWith('assets/') ? alias.slice(7) : alias;
+      batch.push({ key: key.toLowerCase(), data: await entryBlob(file, src) });
+      if (batch.length >= 400) { await RechanStore.putMany(batch); batch = []; }
+    }
     if (batch.length) await RechanStore.putMany(batch);
     const meta = {
       serial: manifest.serial,
       source: 'zip',
-      files: wanted.length,
+      files: wanted.length + aliases.length,
       bytes: total,
       media: manifest.media || {},
       extractedAt: new Date().toISOString(),

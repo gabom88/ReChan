@@ -180,9 +180,13 @@ const RechanInput = (() => {
   function attach(cnv) {
     canvas = cnv;
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 250));
-    if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
+    // Same rotation-settling issue as the touch layer: observe the canvas
+    // itself, plus delayed passes after resize/orientation events.
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resizeCanvas).observe(canvas);
+    const settle = () => { resizeCanvas(); setTimeout(resizeCanvas, 250); setTimeout(resizeCanvas, 600); };
+    window.addEventListener('resize', settle);
+    window.addEventListener('orientationchange', settle);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', settle);
 
     // Capture phase so a key being assigned never reaches the game.
     window.addEventListener('keydown', (e) => {

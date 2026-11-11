@@ -141,8 +141,14 @@ const RechanTouch = (() => {
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
+  // Orientation comes from the screen, not from the layer's size: on iOS a
+  // layout that overflowed during a rotation could widen the layout viewport
+  // (and the fixed layer with it), which then kept selecting the landscape
+  // layout in portrait with oversized controls.
+  const portraitQuery = window.matchMedia ? window.matchMedia('(orientation: portrait)') : null;
   function orientation() {
-    return H() > W() ? 'portrait' : 'landscape';
+    if (portraitQuery) return portraitQuery.matches ? 'portrait' : 'landscape';
+    return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
   }
 
   // Whether the current attack mode uses this control at all.
@@ -257,8 +263,11 @@ const RechanTouch = (() => {
       const s = c.size * u;
       el.style.width = s + 'px';
       el.style.height = s + 'px';
-      el.style.left = (c.x * W() - s / 2) + 'px';
-      el.style.top = (c.y * H() - s / 2) + 'px';
+      // Keep every control fully inside the layer so nothing can overflow
+      // (and widen the page) while a rotation is in progress.
+      const w = W(), hgt = H();
+      el.style.left = Math.max(0, Math.min(w - s, c.x * w - s / 2)) + 'px';
+      el.style.top = Math.max(0, Math.min(hgt - s, c.y * hgt - s / 2)) + 'px';
       el.style.fontSize = (s * 0.2) + 'px';
       el.style.display = c.active ? '' : 'none';
       el.classList.toggle('tc-selected', editing && c.id === selectedId);
@@ -445,12 +454,27 @@ const RechanTouch = (() => {
     // iOS: stop double-tap zoom, long-press callouts and rubber-banding.
     layer.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
     layer.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-    window.addEventListener('resize', () => {
-      // Orientation flips swap layouts: drop presses that belonged to the old one.
-      pointers.clear();
-      recompute();
+    // Re-layout whenever the layer's real size changes. iOS fires "resize"
+    // (and "orientationchange") before the rotation has settled, so layout
+    // computed then used the old size/orientation and stayed wrong; a
+    // ResizeObserver fires once the new size is actually applied.
+    let lastOrientation = orientation();
+    const relayout = () => {
+      const o = orientation();
+      if (o !== lastOrientation) {
+        // Orientation flips swap layouts: drop presses that belonged to the old one.
+        lastOrientation = o;
+        pointers.clear();
+        recompute();
+      }
       layout();
-    });
+    };
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(relayout).observe(layer);
+    const settle = () => { relayout(); setTimeout(relayout, 250); setTimeout(relayout, 600); };
+    window.addEventListener('resize', settle);
+    window.addEventListener('orientationchange', settle);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', settle);
+    if (portraitQuery && portraitQuery.addEventListener) portraitQuery.addEventListener('change', settle);
   }
 
   function show(on) {

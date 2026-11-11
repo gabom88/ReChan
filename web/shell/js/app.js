@@ -135,7 +135,8 @@
   // Portrait on a phone/tablet: game in a 4:3 band at the top, touch
   // controls underneath (handheld layout). Landscape keeps the full screen.
   function updateOrientationLayout() {
-    const portrait = window.innerHeight > window.innerWidth;
+    const portrait = window.matchMedia ? window.matchMedia('(orientation: portrait)').matches
+      : window.innerHeight > window.innerWidth;
     document.body.classList.toggle('portrait-play', portrait && (playing || RechanTouch.editing));
     RechanInput.resizeCanvas();
   }
@@ -489,7 +490,10 @@
       if (touchHiddenByPhysical) { touchHiddenByPhysical = false; updateTouchVisibility(); }
     }, { passive: true });
 
-    window.addEventListener('resize', updateOrientationLayout);
+    // iOS reports rotations before they settle: re-check a little later too.
+    const settleOrientation = () => { updateOrientationLayout(); setTimeout(updateOrientationLayout, 250); setTimeout(updateOrientationLayout, 600); };
+    window.addEventListener('resize', settleOrientation);
+    window.addEventListener('orientationchange', settleOrientation);
     // Prevent pinch-zoom / double-tap zoom on iOS while playing.
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('dblclick', (e) => { if (playing) e.preventDefault(); });

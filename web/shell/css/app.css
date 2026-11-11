@@ -20,6 +20,8 @@
 html, body {
   margin: 0;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
   background: var(--bg);
   color: var(--text);
   font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -159,6 +161,8 @@ select {
 #touch-layer {
   position: fixed;
   inset: 0;
+  /* Clip controls: nothing inside may widen the page on iOS (see touch.js). */
+  overflow: hidden;
   z-index: 10;
   touch-action: none;
   -webkit-user-select: none;

@@ -613,6 +613,12 @@ Infinite jumps:
 [FE_MD_NCLP]
 Walk through walls:
 
+[FE_MD_CAM]
+Camera follows Jackie:
+
+[FE_MAP]
+Back to map
+
 [FE_MD_LIST]
 Installed mods
 

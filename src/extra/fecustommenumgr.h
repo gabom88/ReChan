@@ -108,6 +108,7 @@ enum EntryBinding : u8 {
     EntryBinding_CheatMirrorWorld,
     EntryBinding_ModInfiniteJump,
     EntryBinding_ModNoClipWalls,
+    EntryBinding_ModCameraFollow,
 #endif
 };
 
@@ -436,6 +437,9 @@ private:
                             s32* outLabelX, s32* outValueX, s32* outCenterX) const;
     void SetEntries(PageDef& page, std::initializer_list<Entry> list,
                     s32 entriesOffsetX = 0, s32 entriesOffsetY = 0);
+    // Options is shared by the title and the in-level pause menu; only the
+    // latter gets a "Back to map" (exit to the level-select map) entry.
+    void RefreshOptionsEntries();
     static Entry Button(const char* tok, EntryEvent ev, MenuPage go = MenuPage::MenuPage_None);
     static Entry Slider(const char* tok, EntryBinding binding, s32 step, s32 lo, s32 hi);
     Entry List(const char* tok, EntryBinding binding, s32 step, s32 lo, s32 hi);
@@ -600,6 +604,7 @@ private:
     bool m_gameOverTextureTried = false;
     bool m_loadingScreenTexturesTried = false;
     MenuPage m_currPage = MenuPage_None;
+    MenuPage m_activatedFrom = MenuPage_None; // page passed to Activate()
     MenuPage m_prevPage = MenuPage_None;
     s32 m_cursor = 0;
     s32 m_result = 1;

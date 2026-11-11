@@ -613,6 +613,12 @@ Unendlich springen:
 [FE_MD_NCLP]
 Durch Waende gehen:
 
+[FE_MD_CAM]
+Kamera folgt Jackie:
+
+[FE_MAP]
+Zurueck zur Karte
+
 [FE_MD_LIST]
 Installierte Mods
 

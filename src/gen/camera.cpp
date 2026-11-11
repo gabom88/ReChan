@@ -5,6 +5,7 @@
 #include "gen/animstruct.h"
 #include "ai/thing.h"
 #include "ai/player.h"
+#include "extra/cheats.h"
 #include "p3d/p3dmath.h"
 #include "config.h"
 #include "p3d/keycode.h"
@@ -934,6 +935,19 @@ void Camera::FollowPath() {
     curPos.x = nodeA_src.x + (s32)(((s64)srcSegX * t) >> 16);
     curPos.y = nodeA_src.y + (s32)(((s64)srcSegY * t) >> 16);
     curPos.z = nodeA_src.z + (s32)(((s64)srcSegZ * t) >> 16);
+
+#if NEW_CHEATS
+    // Mod "Camera follows Jackie": drop the per-node follow clamps below, so
+    // eye and look-at shift by the player's full offset from the rail. The
+    // level's camera angle and distance are kept; the player stays centred.
+    if (IsCheatEnabled(CheatOption::CameraFollow) && target == static_cast<Thing*>(Player::s_player)) {
+        constexpr s32 kNoClamp = 0x3FFFFFFF;
+        angleXInterp = kNoClamp;
+        angleZInterp = kNoClamp;
+        zoomInterp = kNoClamp;
+        speedInterp = kNoClamp;
+    }
+#endif
 
     // Compute offset from look-at rail interpolation to player position.
     // PSX: both prevTargetPos and curPos clampings use this same base offset.

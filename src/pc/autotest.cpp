@@ -332,7 +332,7 @@ bool AutoTest_Step(GameState state) {
         static const struct { const char* name; CheatOption opt; } kNames[] = {
             { "godmode", CheatOption::GodMode }, { "onepunch", CheatOption::OnePunchMan },
             { "heavenbound", CheatOption::HeavenBound }, { "infinitejump", CheatOption::InfiniteJump },
-            { "noclip", CheatOption::NoClipWalls },
+            { "noclip", CheatOption::NoClipWalls }, { "camfollow", CheatOption::CameraFollow },
         };
         for (const std::string& want : s_cheats) {
             for (const auto& c : kNames) {

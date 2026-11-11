@@ -82,6 +82,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
             { CheatOption::HeavenBound, "HeavenBound" }, { CheatOption::BobbleHead, "BobbleHead" },
             { CheatOption::Stuntquake, "Stuntquake" }, { CheatOption::MirrorWorld, "MirrorWorld" },
             { CheatOption::InfiniteJump, "InfiniteJump" }, { CheatOption::NoClipWalls, "NoClipWalls" },
+            { CheatOption::CameraFollow, "CameraFollow" },
         };
         std::string on;
         for (const auto& c : kCheats) {

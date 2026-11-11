@@ -613,6 +613,12 @@ Sauts infinis:
 [FE_MD_NCLP]
 Traverser les murs:
 
+[FE_MD_CAM]
+Camera suit Jackie:
+
+[FE_MAP]
+Retour a la carte
+
 [FE_MD_LIST]
 Mods installes
 

@@ -691,6 +691,7 @@ void feCustomMenuMgr::BuildPages() {
     SetEntries(feGameplayMods, {
         Toggle("FE_MD_IJMP", EntryBinding_ModInfiniteJump),
         Toggle("FE_MD_NCLP", EntryBinding_ModNoClipWalls),
+        Toggle("FE_MD_CAM", EntryBinding_ModCameraFollow),
 #ifdef MOD_LOADER
         Button("FE_MD_LIST", EntryEvent_GoPage, MenuPage_Mods),
 #endif
@@ -2220,6 +2221,10 @@ void feCustomMenuMgr::SetPage(MenuPage page) {
     m_keyBindCaptureActive = false;
     m_keyBindCaptureBlockFrames = 0;
 
+    if (m_currPage == MenuPage_Options) {
+        RefreshOptionsEntries();
+    }
+
     if (m_currPage == MenuPage_Title) {
         if (SaveGameHasAutosave()) {
             SetEntries(m_pages[MenuPage_Title], {
@@ -2332,6 +2337,7 @@ void feCustomMenuMgr::SetPage(MenuPage page) {
 
 void feCustomMenuMgr::Activate(MenuPage startPage) {
     m_active = true;
+    m_activatedFrom = startPage;
     m_cursor = 0;
     LoadControllerOverlayTexture();
 
@@ -2910,6 +2916,7 @@ s32 feCustomMenuMgr::GetBoundValue(const Entry& e) const {
         case EntryBinding_CheatMirrorWorld: return IsCheatEnabled(CheatOption::MirrorWorld) ? 1 : 0;
         case EntryBinding_ModInfiniteJump: return IsCheatEnabled(CheatOption::InfiniteJump) ? 1 : 0;
         case EntryBinding_ModNoClipWalls: return IsCheatEnabled(CheatOption::NoClipWalls) ? 1 : 0;
+        case EntryBinding_ModCameraFollow: return IsCheatEnabled(CheatOption::CameraFollow) ? 1 : 0;
 #endif
         default: return 0;
     }
@@ -3027,6 +3034,9 @@ void feCustomMenuMgr::ApplyValue(const Entry& e, s32 v) {
     }
     else if (e.binding == EntryBinding_ModNoClipWalls) {
         SetCheatEnabled(CheatOption::NoClipWalls, v != 0);
+    }
+    else if (e.binding == EntryBinding_ModCameraFollow) {
+        SetCheatEnabled(CheatOption::CameraFollow, v != 0);
     }
     else if (e.binding == EntryBinding_CheatBobbleHead) {
         SetCheatEnabled(CheatOption::BobbleHead, v != 0);
@@ -3381,6 +3391,30 @@ PageDef& feCustomMenuMgr::AddPopup(PopupKind id, const char* title, const char* 
 
     m_popups[id] = def;
     return m_popups[id];
+}
+
+void feCustomMenuMgr::RefreshOptionsEntries() {
+    PageDef& page = m_pages[MenuPage_Options];
+    // Strip a previously inserted map entry, then re-add it when the menu was
+    // opened from the pause menu inside a level (never on the title or hub).
+    for (s32 i = 0; i < page.numEntries; ++i) {
+        if (std::strcmp(page.entries[i].token, "FE_MAP") == 0) {
+            for (s32 j = i; j + 1 < page.numEntries; ++j) page.entries[j] = page.entries[j + 1];
+            --page.numEntries;
+            break;
+        }
+    }
+    const bool inLevel = (m_activatedFrom == MenuPage_Pause) && g_game && g_game->GetWorld()
+        && g_game->GetWorld()->GetCurLevelID() != 7;
+    if (inLevel && page.numEntries >= 1 && page.numEntries < MAX_ENTRIES_PER_MENU) {
+        // Insert just before the trailing Back entry.
+        page.entries[page.numEntries] = page.entries[page.numEntries - 1];
+        page.entries[page.numEntries - 1] = Button("FE_MAP", EntryEvent_GoPage, MenuPage_ExitLevelConfirm);
+        ++page.numEntries;
+    }
+    if (page.autoFrameH) {
+        page.frameH = CalcAutoFrameHeight(page.numEntries, CalcPageExtraHeight(page));
+    }
 }
 
 void feCustomMenuMgr::SetEntries(PageDef& page, std::initializer_list<Entry> list,

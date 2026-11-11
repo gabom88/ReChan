@@ -247,6 +247,8 @@
     if (tour > 0) args.push('--tour', String(tour));
     if (params.get('petal')) args.push('--petal', params.get('petal'));
     if (params.get('dump')) args.push('--dump-interval', params.get('dump'));
+    for (const c of (params.get('cheat') || '').split(',').filter(Boolean)) args.push('--cheat', c);
+    if (params.get('hold')) args.push('--hold', params.get('hold'));
     return args;
   }
 

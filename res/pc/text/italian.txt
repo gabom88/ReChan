@@ -613,6 +613,12 @@ Salti infiniti:
 [FE_MD_NCLP]
 Attraversa i muri:
 
+[FE_MD_CAM]
+Telecamera segue Jackie:
+
+[FE_MAP]
+Torna alla mappa
+
 [FE_MD_LIST]
 Mod installate
 

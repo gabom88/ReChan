@@ -15,6 +15,7 @@ enum class CheatOption {
     // Gameplay mods (Pause -> Options -> Mods)
     InfiniteJump,   // jump again while airborne on every jump press
     NoClipWalls,    // the player ignores wall collision (floor and boxes still apply)
+    CameraFollow,   // the rail camera keeps the player centred (no follow clamps)
 };
 
 bool IsCheatEnabled(CheatOption option);

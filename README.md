@@ -55,7 +55,10 @@ El juego permite reasignar las teclas desde sus propias opciones. El botón **�
 
 - **Saltos infinitos:** Jackie vuelve a saltar en el aire cada vez que pulsas saltar.
 - **Atravesar paredes:** Jackie ignora las paredes. El suelo, las cajas y los obstáculos se siguen respetando, así que si atraviesas una pared exterior del nivel y detrás no hay suelo, caerás.
+- **Cámara sigue a Jackie:** la cámara mantiene el ángulo y la distancia que el nivel define en cada zona, pero ya no limita cuánto puede desplazarse, así que Jackie queda siempre centrado.
 - **Mods instalados:** la lista de mods de archivos de siempre (carpeta `~mods`).
+
+Dentro de un nivel, **Pausa → Opciones → Volver al mapa** sale del nivel (con confirmación) y regresa al mapa donde se eligen los niveles, igual que «Salir del nivel» del menú de pausa.
 
 Los mods, igual que los trucos, se desactivan al cargar una partida. El truco **Rumbo al cielo** (Opciones → Trucos) hace que los enemigos derrotados asciendan al cielo; si está desactivado, simplemente desaparecen como en el original. El diagnóstico de **F8** indica qué trucos y mods están activos.
 

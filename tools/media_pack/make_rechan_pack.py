@@ -39,8 +39,31 @@ import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parent / "extract_assets"))
+
+
+def _find_dir(filename: str) -> Path | None:
+    """Locate a helper module whether the script runs from tools/media_pack,
+    was copied to the repository root, or is started from any folder inside
+    the repository."""
+    subdirs = ("", "media_pack", "extract_assets", "tools/media_pack", "tools/extract_assets")
+    starts = [HERE, Path.cwd()]
+    for start in starts:
+        for base in [start, *start.parents]:
+            for sub in subdirs:
+                d = base / sub
+                if (d / filename).is_file():
+                    return d
+    return None
+
+
+for _mod in ("psx_audio.py", "extract_psx_bin.py"):
+    _d = _find_dir(_mod)
+    if _d is None:
+        sys.exit(f"ERROR: no encuentro {_mod}.\n"
+                 "Ejecuta el script desde el repositorio ReChan completo, p. ej.:\n"
+                 '  python3 tools/media_pack/make_rechan_pack.py "juego.bin"')
+    if str(_d) not in sys.path:
+        sys.path.insert(0, str(_d))
 
 import psx_audio as pa  # noqa: E402
 import extract_psx_bin as xbin  # noqa: E402

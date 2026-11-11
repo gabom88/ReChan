@@ -43,7 +43,8 @@ const RechanUpdate = (() => {
       const res = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const info = await res.json();
-      if (info && info.build && info.build > CURRENT.build) {
+      // Whatever is published is the build to run (it may even be a rollback).
+      if (info && info.build && info.build !== CURRENT.build) {
         latest = info; lastResult = 'available';
         if (registration) registration.update().catch(() => {}); // start downloading it
       } else {

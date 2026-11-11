@@ -35,7 +35,7 @@ jobs:
           actions-cache-folder: emsdk-cache
 
       - name: Build
-        run: make -C web -j"$(nproc)" BUILD_ID="${GITHUB_SHA::12}"
+        run: make -C web -j"$(nproc)" BUILD_ID="$(date -u +%Y%m%d%H%M%S)" COMMIT="${GITHUB_SHA::7}"
 
       - uses: actions/upload-pages-artifact@v3
         with:

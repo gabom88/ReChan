@@ -513,6 +513,14 @@ static s32 StitchIdleAnimationCallback(uintptr_t adjustedThis) {
     return 1;
 }
 
+// Both callbacks above are stored in AnimHumanoidCB::funcPtr; see
+// AnimRegisterHumanoidCallback in gen/animstruct.h for why they are registered.
+static const bool s_humanoidAnimCallbacksRegistered = [] {
+    AnimRegisterHumanoidCallback(CallNextActionCallback);
+    AnimRegisterHumanoidCallback(StitchIdleAnimationCallback);
+    return true;
+}();
+
 static void SetCallNextActionCallback(Model* model) {
     if (!model) {
         return;

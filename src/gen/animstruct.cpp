@@ -493,6 +493,33 @@ void AnimStructure::RunToLastBlend() {
     }
 }
 
+namespace {
+    constexpr s32 kMaxHumanoidCallbacks = 16;
+    AnimHumanoidCallbackFn s_humanoidCallbacks[kMaxHumanoidCallbacks] = {};
+    s32 s_humanoidCallbackCount = 0;
+}
+
+void AnimRegisterHumanoidCallback(AnimHumanoidCallbackFn fn) {
+    if (!fn || AnimIsRegisteredHumanoidCallback(reinterpret_cast<const void*>(fn))) {
+        return;
+    }
+    if (s_humanoidCallbackCount < kMaxHumanoidCallbacks) {
+        s_humanoidCallbacks[s_humanoidCallbackCount++] = fn;
+    }
+}
+
+bool AnimIsRegisteredHumanoidCallback(const void* fn) {
+    if (!fn) {
+        return false;
+    }
+    for (s32 i = 0; i < s_humanoidCallbackCount; i++) {
+        if (reinterpret_cast<const void*>(s_humanoidCallbacks[i]) == fn) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // PSX: ProcessHumanoidCB__13AnimStructure (0x80071108)
 void AnimStructure::ProcessHumanoidCB() {
     s16 selector = humanoidCB.offsetHi;
@@ -512,8 +539,10 @@ void AnimStructure::ProcessHumanoidCB() {
 
     // PSX: selector <= 0 means direct callback function at +100.
     if (cb.offsetHi <= 0) {
+        // Registered callbacks first: on WebAssembly function pointers are
+        // small table indices and would fail the legacy address heuristic.
         uintptr_t fnValue = reinterpret_cast<uintptr_t>(cb.funcPtr);
-        if (fnValue > 0xFFFF) {
+        if (AnimIsRegisteredHumanoidCallback(cb.funcPtr) || fnValue > 0xFFFF) {
             using CallbackFn = s32(*)(uintptr_t);
             CallbackFn fn = reinterpret_cast<CallbackFn>(cb.funcPtr);
             fn(adjusted);

@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "core.h"
 #include "p3d/p3dmath.h"
 #include "p3d/flip.h"
@@ -25,6 +26,16 @@ struct AnimHumanoidCB {
     s16 offsetHi = 0;    // +96 high (HIWORD)
     void* funcPtr = nullptr; // +100
 };
+
+// Real C++ callbacks that may be stored in AnimHumanoidCB::funcPtr must be
+// registered here. ProcessHumanoidCB used to tell a real function pointer from
+// a small PSX sentinel by checking "pointer > 0xFFFF", which only holds where
+// code addresses are large (x86-64, ARM64). On WebAssembly a function pointer
+// is a small table index, so that check silently dropped every callback (e.g.
+// the player never left a hit-react state). Registration works everywhere.
+using AnimHumanoidCallbackFn = s32 (*)(uintptr_t adjustedThis);
+void AnimRegisterHumanoidCallback(AnimHumanoidCallbackFn fn);
+bool AnimIsRegisteredHumanoidCallback(const void* fn);
 
 struct BlendJointPose {
     s32 translationX = 0;

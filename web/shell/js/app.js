@@ -178,9 +178,10 @@
     const canMap = playing && window.Module && Module._rcweb_can_exit_to_map && Module._rcweb_can_exit_to_map();
     $('opt-map').classList.toggle('hidden', !canMap);
     refreshStorageInfo();
+    renderAttackKeys();
     $('settings').classList.remove('hidden');
   }
-  function closeSettings() { $('settings').classList.add('hidden'); }
+  function closeSettings() { RechanInput.cancelCapture(); $('settings').classList.add('hidden'); }
 
   async function toggleFullscreen() {
     const el = document.documentElement;
@@ -196,6 +197,58 @@
       }
     } catch (_) {
       toast(t('fullscreenUnsupported'));
+    }
+  }
+
+  // --- direct-attack key bindings ---
+  const DIRECT_MOVES = [
+    ...[1, 2, 3, 4, 5, 6, 7].map((i) => ({ n: i, sec: i === 1 ? 'punches' : null, name: () => t('touch.punch') + ' ' + i })),
+    ...[1, 2, 3, 4, 5, 6, 7].map((i) => ({ n: 7 + i, sec: i === 1 ? 'kicks' : null, name: () => t('touch.kick') + ' ' + i })),
+    { n: 15, sec: 'specials', name: () => t('touch.backPunch') },
+    { n: 16, name: () => t('touch.heavyPunch') },
+    { n: 17, name: () => t('touch.special') },
+    { n: 18, name: () => t('touch.backKick') },
+    { n: 19, name: () => t('touch.heavyKick') },
+  ];
+
+  function keyLabel(code) {
+    if (!code) return t('noKey');
+    const named = { Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=',
+                    BracketLeft: '[', BracketRight: ']', Backslash: '\\', Backquote: '`', Space: 'Space' };
+    if (named[code]) return named[code];
+    if (code.startsWith('Key')) return code.slice(3);
+    if (code.startsWith('Digit')) return code.slice(5);
+    if (code.startsWith('Numpad')) return 'Num ' + code.slice(6);
+    return code;
+  }
+
+  function renderAttackKeys() {
+    const list = $('attack-keys-list');
+    list.innerHTML = '';
+    for (const m of DIRECT_MOVES) {
+      if (m.sec) {
+        const h = document.createElement('div');
+        h.className = 'sec';
+        h.textContent = t(m.sec);
+        list.appendChild(h);
+      }
+      const label = document.createElement('span');
+      label.textContent = m.name();
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = keyLabel(RechanInput.getDirectKey(m.n));
+      btn.addEventListener('click', () => {
+        btn.textContent = t('pressKey');
+        btn.classList.add('listening');
+        RechanInput.captureNextKey((code) => {
+          if (code === 'Escape') { /* cancel */ }
+          else if (code === 'Backspace' || code === 'Delete') RechanInput.setDirectKey(m.n, '');
+          else RechanInput.setDirectKey(m.n, code);
+          renderAttackKeys();
+        });
+      });
+      list.appendChild(label);
+      list.appendChild(btn);
     }
   }
 
@@ -390,6 +443,7 @@
     $('opt-edit-touch').addEventListener('click', openTouchEditor);
     $('opt-fullscreen').addEventListener('click', toggleFullscreen);
     $('opt-diag').addEventListener('click', copyDiagnostics);
+    $('attack-keys-reset').addEventListener('click', () => { RechanInput.resetDirectKeys(); renderAttackKeys(); });
     $('opt-map').addEventListener('click', () => {
       if (!confirm(t('confirmMap'))) return;
       Module._rcweb_request_exit_to_map();

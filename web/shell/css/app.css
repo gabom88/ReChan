@@ -268,6 +268,29 @@ body.portrait-play #canvas {
 body.portrait-play { background: #101014; }
 body.portrait-play #menu-btn { top: calc(100vw * .75 + 6px + var(--safe-t)); border-radius: 12px; }
 
+.testmode { margin-top: 12px; text-align: left; }
+.testmode summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.keylist { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin: 6px 0 10px; }
+.keylist .btn { min-height: 32px; padding: 4px 10px; min-width: 64px; font-size: 14px; }
+.keylist .btn.listening { background: var(--accent); color: var(--accent-text); }
+.keylist .sec { grid-column: 1 / -1; font-weight: 700; margin-top: 6px; color: var(--muted); font-size: 13px; }
+#test-banner {
+  position: fixed;
+  z-index: 55;
+  left: 8px;
+  bottom: 8px;
+  max-width: min(560px, calc(100vw - 16px));
+  max-height: 45vh;
+  overflow: auto;
+  background: rgba(20, 20, 26, .9);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: 12px/1.4 ui-monospace, Menlo, monospace;
+  white-space: pre-wrap;
+}
+#test-banner.ok { border: 2px solid #4caf50; }
+#test-banner.fail { border: 2px solid var(--danger); }
+
 #toast {
   position: fixed;
   z-index: 60;

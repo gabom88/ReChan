@@ -46,7 +46,33 @@ const RechanInput = (() => {
   let renderScale = 1;
 
   // Touch overlay state (filled by touch.js)
-  const touch = { buttons: 0, axes: [0, 0, 0, 0, 0, 0], active: false, directMove: 0 };
+  const touch = { buttons: 0, axes: [0, 0, 0, 0, 0, 0], active: false, directMove: 0, directSince: 0 };
+
+  // Keyboard keys bound to direct attacks (☰ -> Options -> Attack keys).
+  // A held key presses punch/kick on the virtual pad and tells the engine
+  // which move to use, exactly like the direct-attack touch buttons.
+  const DIRECT_KEYS_STORAGE = 'rechan.directKeys.v1';
+  const DIRECT_DEFAULT_KEYS = {
+    1: 'Digit1', 2: 'Digit2', 3: 'Digit3', 4: 'Digit4', 5: 'Digit5', 6: 'Digit6', 7: 'Digit7',
+    8: 'KeyZ', 9: 'KeyX', 10: 'KeyV', 11: 'KeyB', 12: 'KeyN', 13: 'KeyM', 14: 'Comma',
+    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash',
+  };
+  let directKeys = {};
+  try { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS, JSON.parse(localStorage.getItem(DIRECT_KEYS_STORAGE) || '{}')); }
+  catch (_) { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS); }
+  let keyDirect = 0;          // move index of the direct key currently held (1-19)
+  let keyDirectSince = 0;
+  let pulseMove = 0, pulseSince = 0, pulseFrames = 0;
+  let keyDirectCode = '';
+  let captureCallback = null; // set while the options menu waits for a key
+  function isPunchMove(n) { return (n >= 1 && n <= 7) || (n >= 15 && n <= 17); }
+  function directForCode(code) {
+    for (const n in directKeys) if (directKeys[n] === code) return parseInt(n, 10);
+    return 0;
+  }
+  function saveDirectKeys() {
+    try { localStorage.setItem(DIRECT_KEYS_STORAGE, JSON.stringify(directKeys)); } catch (_) { /* ignore */ }
+  }
 
   let lastPhysicalPadAt = 0;
   let lastKeyboardAt = 0;
@@ -69,6 +95,27 @@ const RechanInput = (() => {
     let buttons = touch.active ? touch.buttons : 0;
     const axes = touch.active ? touch.axes.slice() : [0, 0, 0, 0, 0, 0];
     let connected = touch.active;
+    // Direct attacks (touch buttons or bound keys) tap punch/kick for a short
+    // pulse only: holding punch/kick is how the game asks for heavy attacks,
+    // so a held finger/key must not turn the chosen move into another one.
+    // The pulse lasts ~110 ms and at least 3 frames (slow devices).
+    const DIRECT_PULSE_MS = 110;
+    const nowMs = performance.now();
+    let directMove = 0;
+    let since = 0;
+    if (touch.active && touch.directMove) {
+      directMove = touch.directMove;
+      since = touch.directSince;
+    } else if (keyDirect) {
+      directMove = keyDirect;
+      since = keyDirectSince;
+      connected = true;
+    }
+    if (directMove !== pulseMove || since !== pulseSince) { pulseMove = directMove; pulseSince = since; pulseFrames = 0; }
+    if (directMove && (nowMs - since < DIRECT_PULSE_MS || pulseFrames < 3)) {
+      buttons |= 1 << (isPunchMove(directMove) ? BTN.X : BTN.Y);
+    }
+    pulseFrames++;
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     for (const pad of pads) {
       if (!pad || !pad.connected) continue;
@@ -101,7 +148,7 @@ const RechanInput = (() => {
     dv.setUint8(OFF.touchActive, touch.active ? 1 : 0);
     dv.setInt32(OFF.canvasW, canvasW, true);
     dv.setInt32(OFF.canvasH, canvasH, true);
-    dv.setInt32(OFF.directMove, touch.active ? (touch.directMove | 0) : 0, true);
+    dv.setInt32(OFF.directMove, directMove, true);
   }
 
   function resizeCanvas() {
@@ -137,8 +184,19 @@ const RechanInput = (() => {
     window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 250));
     if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
 
+    // Capture phase so a key being assigned never reaches the game.
+    window.addEventListener('keydown', (e) => {
+      if (!captureCallback) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const cb = captureCallback;
+      captureCallback = null;
+      cb(e.code);
+    }, true);
     window.addEventListener('keydown', (e) => {
       if (isTypingTarget(e.target)) return;
+      const n = e.repeat ? 0 : directForCode(e.code);
+      if (n) { keyDirect = n; keyDirectCode = e.code; keyDirectSince = performance.now(); }
       const k = KEYMAP[e.code];
       if (k !== undefined) {
         keys[k] = 1;
@@ -151,8 +209,9 @@ const RechanInput = (() => {
     window.addEventListener('keyup', (e) => {
       const k = KEYMAP[e.code];
       if (k !== undefined) keys[k] = 0;
+      if (e.code === keyDirectCode) { keyDirect = 0; keyDirectCode = ''; }
     });
-    window.addEventListener('blur', () => { keys.fill(0); mouse.fill(0); });
+    window.addEventListener('blur', () => { keys.fill(0); mouse.fill(0); keyDirect = 0; keyDirectCode = ''; });
 
     canvas.addEventListener('mousedown', (e) => {
       if (e.button < 8) mouse[e.button] = 1;
@@ -195,6 +254,17 @@ const RechanInput = (() => {
 
   return {
     BTN, touch, attach, start, setPointerLock, resizeCanvas,
+    // Direct-attack key bindings (move 1-19 -> KeyboardEvent.code or '').
+    getDirectKey(n) { return directKeys[n] || ''; },
+    setDirectKey(n, code) {
+      // A key drives one move only: drop it from any other move first.
+      if (code) for (const m in directKeys) if (directKeys[m] === code) directKeys[m] = '';
+      directKeys[n] = code || '';
+      saveDirectKeys();
+    },
+    resetDirectKeys() { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS); saveDirectKeys(); },
+    captureNextKey(cb) { captureCallback = cb; },
+    cancelCapture() { captureCallback = null; },
     setRenderScale(s) { renderScale = s; resizeCanvas(); },
     onPhysicalInput(fn) { listeners.physicalInput.push(fn); },
     get lastPhysicalPadAt() { return lastPhysicalPadAt; },

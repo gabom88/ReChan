@@ -79,6 +79,8 @@ Desde el lanzador (**Configurar mando táctil**) o durante la partida (**☰ →
   | Puñetazo (animación) | 57 | 58 | 59 | 60 | 61 | 62 | 26 |
   | Patada (animación) | 53 | 54 | 55 | 56 | 44 | 42 | 48 |
 
+  **Con teclado:** en **☰ → Opciones → Teclas de golpes** se asigna una tecla a cada uno de los 19 golpes (pulsa el botón y luego la tecla; Esc cancela, Retroceso borra). Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . /`. Funcionan siempre, sin importar el modo del mando táctil. Mantener la tecla o el dedo no convierte el golpe en otro: solo se envía un toque breve.
+
   Especiales (fila dorada): puñetazo de espalda ↺ (64), puñetazo fuerte ! (23), golpe especial ★ (63), patada de espalda ↺ (65) y patada fuerte ! (67). El golpe especial es un agarre: necesita un enemigo al alcance.
 
 La configuración se guarda en el navegador. En modo **Automático**, el mando táctil se oculta al usar un teclado o mando físico y vuelve a aparecer al tocar la pantalla. También puedes fijarlo en **Siempre** o **Nunca**, y bajar la **resolución de render** si el dispositivo va justo.

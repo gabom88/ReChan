@@ -142,7 +142,7 @@ const RechanTouch = (() => {
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
   function orientation() {
-    return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+    return H() > W() ? 'portrait' : 'landscape';
   }
 
   // Whether the current attack mode uses this control at all.
@@ -203,7 +203,19 @@ const RechanTouch = (() => {
     }
   }
 
-  function unit() { return Math.min(window.innerWidth, window.innerHeight); }
+  // All geometry is relative to the touch layer itself, never to the window:
+  // on iOS Safari the fixed layer can be offset from / sized differently to
+  // window.inner* (toolbars, standalone status bar), which shifted the touch
+  // areas away from the drawn buttons.
+  function layerRect() {
+    return layer ? layer.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  }
+  function W() { return (layer && layer.clientWidth) || layerRect().width || window.innerWidth; }
+  function H() { return (layer && layer.clientHeight) || layerRect().height || window.innerHeight; }
+  function lx(e) { return e.clientX - layerRect().left; }
+  function ly(e) { return e.clientY - layerRect().top; }
+
+  function unit() { return Math.min(W(), H()); }
 
   function build() {
     layer.innerHTML = '';
@@ -245,8 +257,8 @@ const RechanTouch = (() => {
       const s = c.size * u;
       el.style.width = s + 'px';
       el.style.height = s + 'px';
-      el.style.left = (c.x * window.innerWidth - s / 2) + 'px';
-      el.style.top = (c.y * window.innerHeight - s / 2) + 'px';
+      el.style.left = (c.x * W() - s / 2) + 'px';
+      el.style.top = (c.y * H() - s / 2) + 'px';
       el.style.fontSize = (s * 0.2) + 'px';
       el.style.display = c.active ? '' : 'none';
       el.classList.toggle('tc-selected', editing && c.id === selectedId);
@@ -260,8 +272,8 @@ const RechanTouch = (() => {
     for (const c of controls()) {
       if (!c.active) continue;
       const r = c.size * u / 2 * slop;
-      const dx = (x - c.x * window.innerWidth) / r;
-      const dy = (y - c.y * window.innerHeight) / r;
+      const dx = (x - c.x * W()) / r;
+      const dy = (y - c.y * H()) / r;
       const d = dx * dx + dy * dy;
       if (d <= 1 && d < bestD) { best = c; bestD = d; }
     }
@@ -286,8 +298,8 @@ const RechanTouch = (() => {
       if (c.type === 'button') {
         if (c.bind === 'LT') axes[4] = 1;
         else if (c.bind === 'RT') axes[5] = 1;
+        else if (c.direct) direct = c.direct; // punch/kick pulse added by input.js
         else buttons |= (1 << c.bind);
-        if (c.direct) direct = c.direct;
       } else if (c.type === 'stick') {
         axes[0] = p.ax || 0;
         axes[1] = p.ay || 0;
@@ -298,6 +310,7 @@ const RechanTouch = (() => {
     buttons |= dpadDirs;
     RechanInput.touch.buttons = buttons;
     RechanInput.touch.axes = axes;
+    if (direct !== RechanInput.touch.directMove) RechanInput.touch.directSince = performance.now();
     RechanInput.touch.directMove = direct;
     for (const [id, el] of elements) {
       let pressed = false;
@@ -316,8 +329,8 @@ const RechanTouch = (() => {
 
   function updateStick(p, c, x, y) {
     const r = c.size * unit() / 2;
-    let dx = (x - c.x * window.innerWidth) / r;
-    let dy = (y - c.y * window.innerHeight) / r;
+    let dx = (x - c.x * W()) / r;
+    let dy = (y - c.y * H()) / r;
     const len = Math.hypot(dx, dy);
     if (len > 1) { dx /= len; dy /= len; }
     p.ax = Math.abs(dx) < 0.08 ? 0 : dx;
@@ -333,8 +346,8 @@ const RechanTouch = (() => {
   }
 
   function updateDpad(p, c, x, y) {
-    const dx = x - c.x * window.innerWidth;
-    const dy = y - c.y * window.innerHeight;
+    const dx = x - c.x * W();
+    const dy = y - c.y * H();
     const dead = c.size * unit() * 0.1;
     let dirs = 0;
     if (Math.hypot(dx, dy) > dead) {
@@ -351,14 +364,14 @@ const RechanTouch = (() => {
   // --- play mode pointer handling ---
   function onDown(e) {
     if (editing) return editDown(e);
-    const c = controlAt(e.clientX, e.clientY, 1.2);
+    const c = controlAt(lx(e), ly(e), 1.2);
     if (!c) return;
     e.preventDefault();
     try { layer.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
     const p = { id: c.id };
     pointers.set(e.pointerId, p);
-    if (c.type === 'stick') updateStick(p, c, e.clientX, e.clientY);
-    else if (c.type === 'dpad') updateDpad(p, c, e.clientX, e.clientY);
+    if (c.type === 'stick') updateStick(p, c, lx(e), ly(e));
+    else if (c.type === 'dpad') updateDpad(p, c, lx(e), ly(e));
     else buzz();
     recompute();
   }
@@ -370,12 +383,12 @@ const RechanTouch = (() => {
     e.preventDefault();
     const c = find(p.id);
     if (!c) return;
-    if (c.type === 'stick') updateStick(p, c, e.clientX, e.clientY);
-    else if (c.type === 'dpad') updateDpad(p, c, e.clientX, e.clientY);
+    if (c.type === 'stick') updateStick(p, c, lx(e), ly(e));
+    else if (c.type === 'dpad') updateDpad(p, c, lx(e), ly(e));
     else {
       // Let a thumb slide across the action buttons (e.g. punch -> kick).
       // Direct-attack buttons never slide: each one is a deliberate press.
-      const over = controlAt(e.clientX, e.clientY, 1.0);
+      const over = controlAt(lx(e), ly(e), 1.0);
       if (over && over.type === 'button' && over.id !== p.id && !over.direct && !c.direct) { p.id = over.id; buzz(); }
     }
     recompute();
@@ -394,11 +407,11 @@ const RechanTouch = (() => {
   let drag = null;
   function editDown(e) {
     e.preventDefault();
-    const c = controlAt(e.clientX, e.clientY, 1.1);
+    const c = controlAt(lx(e), ly(e), 1.1);
     selectedId = c ? c.id : null;
     if (c) {
       drag = { pointerId: e.pointerId, id: c.id,
-               ox: e.clientX - c.x * window.innerWidth, oy: e.clientY - c.y * window.innerHeight };
+               ox: lx(e) - c.x * W(), oy: ly(e) - c.y * H() };
       try { layer.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
     }
     layout();
@@ -411,8 +424,8 @@ const RechanTouch = (() => {
     const key = placeKey(drag.id);
     if (!layouts[o][key]) { const f = find(drag.id); layouts[o][key] = { x: f.x, y: f.y, size: f.size, visible: f.visible }; }
     const place = layouts[o][key];
-    place.x = Math.min(0.98, Math.max(0.02, (e.clientX - drag.ox) / window.innerWidth));
-    place.y = Math.min(0.98, Math.max(0.02, (e.clientY - drag.oy) / window.innerHeight));
+    place.x = Math.min(0.98, Math.max(0.02, (lx(e) - drag.ox) / W()));
+    place.y = Math.min(0.98, Math.max(0.02, (ly(e) - drag.oy) / H()));
     layout();
   }
   function editUp(e) {

@@ -104,7 +104,8 @@ void AnimWatch_Step() {
         const Humanoid* h = static_cast<const Humanoid*>(static_cast<Thing*>(n));
         // Enemies driven by the AI do not necessarily carry TF_ACTIVATED, so
         // watch every living humanoid that currently has an animation.
-        if (h->flags & TF_DEAD) continue;
+        // Dead humanoids legitimately hold their last death frame.
+        if ((h->flags & TF_DEAD) || h->actionState == AS_DEAD) continue;
         const AnimStructure* a = AnimOf(h);
         if (!a) continue;
 

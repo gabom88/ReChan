@@ -72,10 +72,13 @@ PACK_FORMAT = "rechan-media-pack"
 PACK_VERSION = 1
 EXPECTED_SERIAL = "SLUS-00684"
 
-MUSIC_BITRATE = "96k"
-DIALOG_BITRATE = "48k"
-MOVIE_AUDIO_BITRATE = "96k"
-MOVIE_CRF = "23"
+# Quality presets: (music kbps, speech kbps, movie CRF, movie audio kbps).
+# Lower CRF = better video, bigger file (each +6 roughly halves the size).
+PRESETS = {
+    "high":   {"music": "128k", "dialog": "48k", "crf": "21", "movie_audio": "128k"},
+    "normal": {"music": "96k",  "dialog": "32k", "crf": "24", "movie_audio": "96k"},
+    "small":  {"music": "64k",  "dialog": "24k", "crf": "28", "movie_audio": "64k"},
+}
 
 
 # ----------------------------------------------------------------- helpers
@@ -128,7 +131,7 @@ def read_disc_serial(bin_path: Path) -> str | None:
 # ------------------------------------------------------- conversion workers
 # Top-level functions so they can run in worker processes (Windows-safe).
 
-def job_music_song(ffmpeg: str, fag_path: str, start: int, end: int, out_m4a: str) -> str:
+def job_music_song(ffmpeg: str, q: dict, fag_path: str, start: int, end: int, out_m4a: str) -> str:
     data = Path(fag_path).read_bytes()
     pcm = pa.decode_fag_song(data, start, end)
     if not len(pcm):
@@ -136,11 +139,11 @@ def job_music_song(ffmpeg: str, fag_path: str, start: int, end: int, out_m4a: st
     with tempfile.TemporaryDirectory() as tmp:
         wav = os.path.join(tmp, "s.wav")
         Path(wav).write_bytes(pa.wav_bytes(pcm, pa.FAG_RATE, 2))
-        run_ffmpeg(ffmpeg, ["-i", wav, "-c:a", "aac", "-b:a", MUSIC_BITRATE, "-movflags", "+faststart", out_m4a])
+        run_ffmpeg(ffmpeg, ["-i", wav, "-c:a", "aac", "-b:a", q["music"], "-movflags", "+faststart", out_m4a])
     return out_m4a
 
 
-def job_dialog_batch(ffmpeg: str, dlg_path: str, clips: list[tuple[str, int, int]], out_dir: str) -> int:
+def job_dialog_batch(ffmpeg: str, q: dict, dlg_path: str, clips: list[tuple[str, int, int]], out_dir: str) -> int:
     data = Path(dlg_path).read_bytes()
     done = 0
     with tempfile.TemporaryDirectory() as tmp:
@@ -151,13 +154,13 @@ def job_dialog_batch(ffmpeg: str, dlg_path: str, clips: list[tuple[str, int, int
             wav = os.path.join(tmp, name + ".wav")
             Path(wav).write_bytes(pa.wav_bytes(pcm, pa.DIALOG_RATE, 1))
             # 22.05 kHz output: every browser's AAC decoder handles it.
-            run_ffmpeg(ffmpeg, ["-i", wav, "-ar", "22050", "-c:a", "aac", "-b:a", DIALOG_BITRATE,
+            run_ffmpeg(ffmpeg, ["-i", wav, "-ar", "22050", "-c:a", "aac", "-b:a", q["dialog"],
                                 "-movflags", "+faststart", os.path.join(out_dir, name + ".m4a")])
             done += 1
     return done
 
 
-def job_movie(ffmpeg: str, str_path: str, out_mp4: str) -> str:
+def job_movie(ffmpeg: str, q: dict, str_path: str, out_mp4: str) -> str:
     data = Path(str_path).read_bytes()
     if len(data) % 2336 != 0:
         raise RuntimeError("not raw XA sectors (an .iso image cannot carry the movie audio)")
@@ -170,12 +173,36 @@ def job_movie(ffmpeg: str, str_path: str, out_mp4: str) -> str:
                 msf = bytes(((v // 10) << 4) | (v % 10) for v in (lba // 4500, (lba // 75) % 60, lba % 75))
                 f.write(sync + msf + b"\x02" + data[i * 2336:(i + 1) * 2336])
         run_ffmpeg(ffmpeg, ["-f", "psxstr", "-i", raw, "-map", "0:v:0", "-map", "0:a:0?",
-                            "-c:v", "libx264", "-preset", "slow", "-crf", MOVIE_CRF, "-pix_fmt", "yuv420p",
-                            "-c:a", "aac", "-b:a", MOVIE_AUDIO_BITRATE, "-movflags", "+faststart", out_mp4])
+                            "-c:v", "libx264", "-preset", "slow", "-crf", q["crf"], "-pix_fmt", "yuv420p",
+                            "-c:a", "aac", "-b:a", q["movie_audio"], "-movflags", "+faststart", out_mp4])
     return out_mp4
 
 
 # ------------------------------------------------------------------- main
+
+def print_breakdown(zip_path: Path) -> None:
+    """Show what takes the space inside the pack (compressed sizes)."""
+    groups: dict[str, int] = {}
+    files: list[tuple[int, str]] = []
+    with zipfile.ZipFile(zip_path) as z:
+        for info in z.infolist():
+            parts = info.filename.split("/")
+            if parts[0] == "media" and len(parts) > 2:
+                key = "media/" + parts[1]
+            elif parts[0] == "assets" and len(parts) > 2:
+                key = "assets/" + parts[1]
+            else:
+                key = parts[0]
+            groups[key] = groups.get(key, 0) + info.compress_size
+            files.append((info.compress_size, info.filename))
+    print("  space by folder:")
+    for key, size in sorted(groups.items(), key=lambda kv: -kv[1]):
+        if size >= 1 << 20:
+            print(f"    {key:<22} {human(size):>10}")
+    print("  largest files:")
+    for size, name in sorted(files, reverse=True)[:8]:
+        print(f"    {name:<40} {human(size):>10}")
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Build a ReChan media pack ZIP from your own disc image.")
@@ -187,7 +214,18 @@ def main() -> int:
     ap.add_argument("--no-dialog", action="store_true", help="keep the original speech")
     ap.add_argument("--no-video", action="store_true", help="keep the original movies")
     ap.add_argument("--keep-temp", action="store_true", help="keep the working folder")
+    ap.add_argument("--quality", choices=sorted(PRESETS), default="normal",
+                    help="size/quality preset (default: normal; small aims for the lightest pack)")
+    ap.add_argument("--music-bitrate", help="override the music AAC bitrate, e.g. 80k")
+    ap.add_argument("--dialog-bitrate", help="override the speech AAC bitrate, e.g. 32k")
+    ap.add_argument("--movie-crf", help="override the H.264 CRF (18 = very good, 28 = small)")
+    ap.add_argument("--movie-audio-bitrate", help="override the movie AAC bitrate, e.g. 96k")
     args = ap.parse_args()
+    q = dict(PRESETS[args.quality])
+    for key, val in (("music", args.music_bitrate), ("dialog", args.dialog_bitrate),
+                     ("crf", args.movie_crf), ("movie_audio", args.movie_audio_bitrate)):
+        if val:
+            q[key] = str(val)
 
     t0 = time.time()
     bin_path = args.bin.resolve()
@@ -200,6 +238,8 @@ def main() -> int:
     if serial != EXPECTED_SERIAL:
         sys.exit(f"Error: wrong disc ({serial or 'unknown'}). Only the NTSC-U release {EXPECTED_SERIAL} is supported.")
     print(f"Serial {serial} OK")
+    print(f"Quality: {args.quality} (music {q['music']}, speech {q['dialog']}, "
+          f"movies crf {q['crf']} + audio {q['movie_audio']})")
 
     work = Path(tempfile.mkdtemp(prefix="rechan-pack-"))
     assets = work / "assets"
@@ -224,7 +264,7 @@ def main() -> int:
                     for i, r in enumerate(pa.fag_song_ranges(data)):
                         if r:
                             out = media / "music" / f"{fag.stem}_s{i:02d}.m4a"
-                            futures[pool.submit(job_music_song, args.ffmpeg, str(fag), r[0], r[1], str(out))] = ("music", fag, out)
+                            futures[pool.submit(job_music_song, args.ffmpeg, q, str(fag), r[0], r[1], str(out))] = ("music", fag, out)
 
             # Speech: batches of clips per worker.
             dlg = assets / "sound" / "dialog" / "rsdialog.dlg"
@@ -232,7 +272,7 @@ def main() -> int:
                 clips = list(pa.dialog_clips(dlg.read_bytes()))
                 step = max(1, len(clips) // (args.jobs * 4) + 1)
                 for i in range(0, len(clips), step):
-                    futures[pool.submit(job_dialog_batch, args.ffmpeg, str(dlg), clips[i:i + step], str(media / "dialog"))] = ("dialog", dlg, None)
+                    futures[pool.submit(job_dialog_batch, args.ffmpeg, q, str(dlg), clips[i:i + step], str(media / "dialog"))] = ("dialog", dlg, None)
                 print(f"  speech clips: {len(clips)}")
 
             # Movies.
@@ -240,7 +280,7 @@ def main() -> int:
             if not args.no_video:
                 for m in movies:
                     out = media / "movies" / f"{m.stem}.mp4"
-                    futures[pool.submit(job_movie, args.ffmpeg, str(m), str(out))] = ("movie", m, out)
+                    futures[pool.submit(job_movie, args.ffmpeg, q, str(m), str(out))] = ("movie", m, out)
 
             print(f"Converting {len(futures)} job(s) with {args.jobs} worker(s)...")
             failed_music_files: set[Path] = set()
@@ -306,6 +346,7 @@ def main() -> int:
         print(f"  speech clips:  {summary['dialog']}")
         print(f"  movies:        {len(summary['movies'])}")
         print(f"  game files {human(original_bytes)} -> pack {human(zip_bytes)}")
+        print_breakdown(out_zip)
         if summary["failed"]:
             print("  kept original (could not convert):")
             for f in summary["failed"]:

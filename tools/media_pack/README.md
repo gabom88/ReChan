@@ -5,7 +5,7 @@
 | Contenido | Original (PSX) | En el ZIP |
 |---|---|---|
 | Música `sound/music/*.fag` | ADPCM de SPU, 22 050 Hz | `media/music/<pista>_sNN.m4a` (AAC 96 kbps) |
-| Voces `sound/dialog/*.dlg` | ADPCM de SPU, 11 025 Hz | `media/dialog/cCC_dDDD_vVV.m4a` (AAC 48 kbps) |
+| Voces `sound/dialog/*.dlg` | ADPCM de SPU, 11 025 Hz | `media/dialog/cCC_dDDD_vVV.m4a` (AAC 32 kbps) |
 | Vídeos `fe/movies/*.str` | MDEC (STR) | `media/movies/<nombre>.mp4` (H.264 + AAC) |
 
 En los archivos originales se ponen a cero los datos que ya se convirtieron. Se mantienen el tamaño y las cabeceras, así que el motor los sigue encontrando, y los ceros apenas ocupan en el ZIP. Lo que no se pueda convertir se queda tal cual.
@@ -43,6 +43,10 @@ Después abre ReChan Web y pulsa **Cargar paquete ZIP (experimental)**.
 | `--jobs N` | Conversiones en paralelo (por defecto, núcleos − 1) |
 | `--no-music` / `--no-dialog` / `--no-video` | Deja esa parte en su formato original |
 | `--keep-temp` | Conserva la carpeta de trabajo (para depurar) |
+| `--quality high/normal/small` | Calidad general. `normal` (por defecto): música 96k, voces 32k, vídeo CRF 24. `small`: 64k / 24k / CRF 28, el más ligero. `high`: 128k / 48k / CRF 21 |
+| `--music-bitrate 80k`, `--dialog-bitrate 32k`, `--movie-crf 26`, `--movie-audio-bitrate 96k` | Ajustan cada valor por separado (en el CRF, más alto = archivo más pequeño) |
+
+Al terminar, el script muestra cuánto ocupa cada carpeta del ZIP y cuáles son los archivos más grandes.
 
 ## Notas
 

@@ -37,7 +37,13 @@ else
   OPT     := -O3 -DNDEBUG
 endif
 
+# -fno-strict-aliasing / -fwrapv: ReChan is developed against MSVC, which never
+# applies type-based alias analysis or signed-overflow assumptions. The
+# reimplemented PSX code type-puns freely (s32 <-> u32/s16 views, fixed-point
+# shifts), so clang -O3 must not either, or logic breaks in rare, hard-to-see
+# ways (e.g. the player freezing mid-level).
 CXXFLAGS  := -std=gnu++20 $(OPT) $(DEFINES) $(INCLUDES) -MMD -MP \
+             -fno-strict-aliasing -fwrapv \
              -Wno-deprecated-declarations -Wno-nontrivial-memaccess
 
 LDFLAGS   := $(OPT) \
@@ -48,7 +54,7 @@ LDFLAGS   := $(OPT) \
              -sENVIRONMENT=web -sEXIT_RUNTIME=0 \
              -sFORCE_FILESYSTEM=1 -lidbfs.js \
              -sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAPF32,addRunDependency,removeRunDependency,UTF8ToString,stringToNewUTF8 \
-             -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_rcweb_input_state \
+             -sEXPORTED_FUNCTIONS=_main,_malloc,_free,_rcweb_input_state,_rcweb_debug_dump \
              --pre-js rechan_web.pre.js \
              --preload-file $(ROOT)/res/pc@/rechan/pc
 
@@ -56,7 +62,7 @@ LDFLAGS   := $(OPT) \
 
 all: dist
 
-$(BUILD)/%.o: $(ROOT)/%.cpp
+$(BUILD)/%.o: $(ROOT)/%.cpp Makefile
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

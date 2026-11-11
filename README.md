@@ -133,6 +133,11 @@ Todos los cambios en C++ están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN
 - Lo probado en Chromium (escritorio y emulación de iPhone): compilación completa, extracción (`.bin` raw 2352 y `.iso` 2048), arranque del motor con WebGL2, mando táctil, persistencia de partidas y PWA. **Falta probarlo con el disco real** en Safari/iPhone: el rendimiento y la memoria en partida completa están sin medir.
 - El audio usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
 - Como en PC, solo se admite la versión **NTSC-U (SLUS-00684)**.
+- El build web se compila con `-fno-strict-aliasing -fwrapv` para tener la misma semántica que MSVC (el compilador con el que se desarrolla ReChan). Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.
+
+### Si algo falla: diagnóstico
+
+Durante la partida pulsa **F8** (o **☰ → Copiar diagnóstico**). Se copia al portapapeles el estado del motor y de Jackie (acción, animación, entrada pulsada, script activo) junto con las últimas líneas del log. Pégalo en un issue para poder localizar el fallo.
 
 ## Créditos
 

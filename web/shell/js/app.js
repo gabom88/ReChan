@@ -18,6 +18,13 @@
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')); } catch (_) { /* ignore */ }
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* ignore */ } }
 
+  // Last engine log lines, included in "Copy diagnostics".
+  const logRing = [];
+  function logLine(s) {
+    logRing.push(String(s));
+    if (logRing.length > 200) logRing.shift();
+  }
+
   let playing = false;
   let engineLoaded = false;
   let touchHiddenByPhysical = false;
@@ -186,6 +193,40 @@
     }
   }
 
+  // --- diagnostics ---
+  function buildDiagnostics() {
+    let state = '(engine not running)';
+    if (window.Module && Module._rcweb_debug_dump && Module.rcInputPtr) {
+      const ptr = Module._rcweb_debug_dump();
+      if (ptr) { state = Module.UTF8ToString(ptr); Module._free(ptr); }
+    }
+    return [
+      '### ReChan web diagnostics',
+      'url: ' + location.href,
+      'ua: ' + navigator.userAgent,
+      'screen: ' + innerWidth + 'x' + innerHeight + ' @' + devicePixelRatio,
+      'pads: ' + (navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean).map((p) => p.id).join(' | ') : '-'),
+      'touch: ' + RechanTouch.shown,
+      '',
+      state,
+      '--- last log lines ---',
+      logRing.join('\n'),
+    ].join('\n');
+  }
+
+  async function copyDiagnostics() {
+    const text = buildDiagnostics();
+    console.log(text);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(t('diagCopied'));
+    } catch (_) {
+      const w = window.open('', '_blank');
+      if (w) { w.document.body.innerHTML = '<pre></pre>'; w.document.querySelector('pre').textContent = text; }
+      toast(t('diagShown'));
+    }
+  }
+
   // --- engine ---
   function hasWebGL2() {
     try { return !!document.createElement('canvas').getContext('webgl2'); } catch (_) { return false; }
@@ -218,8 +259,8 @@
       canvas,
       rcAssets: RechanStore.engineApi,
       locateFile: (path) => path,
-      print: (s) => console.log(s),
-      printErr: (s) => console.warn(s),
+      print: (s) => { logLine(s); console.log(s); },
+      printErr: (s) => { logLine(s); console.warn(s); },
       rcSetTitle: () => {},
       rcSetPointerLock: (want) => RechanInput.setPointerLock(want && !isTouchDevice),
       rcSetFullscreen: (want) => {
@@ -272,6 +313,11 @@
     });
     $('opt-edit-touch').addEventListener('click', openTouchEditor);
     $('opt-fullscreen').addEventListener('click', toggleFullscreen);
+    $('opt-diag').addEventListener('click', copyDiagnostics);
+    // F8 copies diagnostics without leaving the game.
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'F8') { e.preventDefault(); copyDiagnostics(); }
+    });
     $('opt-delete').addEventListener('click', async () => {
       if (!confirm(t('confirmDelete'))) return;
       await RechanStore.clear();

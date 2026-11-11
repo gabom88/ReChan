@@ -31,3 +31,5 @@ scripts/autotest-baseline/
 
 web/build/
 web/dist/
+web/build-*/
+web/dist-*/

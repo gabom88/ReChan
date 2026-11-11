@@ -32,6 +32,18 @@ make_rechan_pack.bat "D:\Juegos\Jackie Chan Stuntmaster (USA).bin"
 python3 tools/media_pack/make_rechan_pack.py "Jackie Chan Stuntmaster (USA).bin" -o rechan-pack.zip
 ```
 
+Si no indicas `--quality`, el script muestra un **selector de calidad** en la terminal (tamaños aproximados para el disco completo):
+
+```text
+=== Calidad del paquete ===
+  1) Alta      - la mejor calidad: música 128k, voces 48k, vídeo CRF 21 + audio 128k  (≈ 184 MB)
+  2) Normal    - equilibrio calidad/tamaño: música 96k, voces 32k, vídeo CRF 24 + audio 96k  (≈ 137 MB)
+  3) Pequeña   - la más ligera (menos de 100 MB): música 64k, voces 24k, vídeo CRF 28 + audio 64k  (≈ 98 MB)
+  4) Personalizada - elegir cada parte
+```
+
+Con **Personalizada** eliges por separado la calidad de la música, las voces, el vídeo y el audio de los vídeos, y el script te muestra el tamaño estimado. Si lo ejecutas sin el `.bin`, te lo pide: arrastra el archivo a la terminal y pulsa Enter. El ZIP se llama `rechan-pack-<calidad>.zip` salvo que uses `-o`.
+
 Después abre ReChan Web y pulsa **Cargar paquete ZIP (experimental)**.
 
 ### Opciones

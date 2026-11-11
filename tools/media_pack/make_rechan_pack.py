@@ -80,6 +80,80 @@ PRESETS = {
     "normal": {"music": "96k",  "dialog": "32k", "crf": "24", "movie_audio": "96k"},
     "small":  {"music": "64k",  "dialog": "24k", "crf": "28", "movie_audio": "64k"},
 }
+PRESET_LABELS = {
+    "high":   "Alta      - la mejor calidad",
+    "normal": "Normal    - equilibrio calidad/tamaño",
+    "small":  "Pequeña   - la más ligera (menos de 100 MB)",
+}
+# Choices offered by the custom option of the menu.
+CHOICES = {
+    "music":       ("Música (AAC estéreo)", ["48k", "64k", "80k", "96k", "128k", "160k"]),
+    "dialog":      ("Voces (AAC mono)", ["24k", "32k", "48k", "64k"]),
+    "crf":         ("Vídeo H.264 (CRF: más alto = más ligero)", ["30", "28", "26", "24", "21", "18"]),
+    "movie_audio": ("Audio de los vídeos (AAC)", ["64k", "96k", "128k"]),
+}
+
+
+def estimate_mb(q: dict) -> float:
+    """Approximate pack size for the full NTSC-U disc (fitted on real packs)."""
+    k = lambda v: float(str(v).rstrip("kK"))
+    return (16.5                                   # levels, models, textures...
+            + 0.642 * k(q["music"])                # ~107 min of music
+            + 3.0 + 29.4 * k(q["dialog"]) / 48     # 3051 speech clips
+            + 40.9 * 0.5 ** ((float(q["crf"]) - 23) / 6.5) * (0.85 + 0.15 * k(q["movie_audio"]) / 96))
+
+
+def describe(q: dict) -> str:
+    return (f"música {q['music']}, voces {q['dialog']}, vídeo CRF {q['crf']} "
+            f"+ audio {q['movie_audio']}  (≈ {estimate_mb(q):.0f} MB)")
+
+
+def ask(prompt: str, options: list[str], default: int) -> int:
+    """Numbered menu; returns the chosen index (Enter = default)."""
+    for i, opt in enumerate(options, 1):
+        mark = "  <- por defecto" if i - 1 == default else ""
+        print(f"  {i}) {opt}{mark}")
+    while True:
+        try:
+            ans = input(f"{prompt} [1-{len(options)}, Enter = {default + 1}]: ").strip()
+        except EOFError:
+            return default
+        if not ans:
+            return default
+        if ans.isdigit() and 1 <= int(ans) <= len(options):
+            return int(ans) - 1
+        print("  Opción no válida.")
+
+
+def quality_menu() -> tuple[str, dict]:
+    print()
+    print("=== Calidad del paquete ===")
+    print("(tamaños aproximados para el disco completo)")
+    names = ["high", "normal", "small"]
+    opts = [f"{PRESET_LABELS[n]}: {describe(PRESETS[n])}" for n in names]
+    opts.append("Personalizada - elegir cada parte")
+    i = ask("Elige", opts, 1)
+    if i < len(names):
+        return names[i], dict(PRESETS[names[i]])
+    q = dict(PRESETS["normal"])
+    for key, (title, values) in CHOICES.items():
+        print()
+        print(f"--- {title} ---")
+        i = ask("Elige", values, values.index(q[key]) if q[key] in values else 0)
+        q[key] = values[i]
+    print()
+    print(f"Personalizada: {describe(q)}")
+    return "custom", q
+
+
+def ask_bin_path() -> Path:
+    print("Arrastra aquí tu imagen .bin de Jackie Chan Stuntmaster y pulsa Enter:")
+    raw = input("> ").strip()
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "'\"":
+        raw = raw[1:-1]
+    elif os.name != "nt":
+        raw = raw.replace("\\ ", " ")  # macOS/Linux terminals escape spaces
+    return Path(raw).expanduser()
 
 
 # ----------------------------------------------------------------- helpers
@@ -207,26 +281,40 @@ def print_breakdown(zip_path: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Build a ReChan media pack ZIP from your own disc image.")
-    ap.add_argument("bin", type=Path, help="your Jackie Chan Stuntmaster (NTSC-U) .bin image")
-    ap.add_argument("-o", "--output", type=Path, default=Path("rechan-pack.zip"), help="output ZIP (default: rechan-pack.zip)")
+    ap.add_argument("bin", type=Path, nargs="?", help="your Jackie Chan Stuntmaster (NTSC-U) .bin image (asked if omitted)")
+    ap.add_argument("-o", "--output", type=Path, help="output ZIP (default: rechan-pack-<quality>.zip)")
     ap.add_argument("--ffmpeg", default=shutil.which("ffmpeg") or "ffmpeg", help="path to ffmpeg")
     ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1), help="parallel workers")
     ap.add_argument("--no-music", action="store_true", help="keep the original music")
     ap.add_argument("--no-dialog", action="store_true", help="keep the original speech")
     ap.add_argument("--no-video", action="store_true", help="keep the original movies")
     ap.add_argument("--keep-temp", action="store_true", help="keep the working folder")
-    ap.add_argument("--quality", choices=sorted(PRESETS), default="normal",
-                    help="size/quality preset (default: normal; small aims for the lightest pack)")
+    ap.add_argument("--quality", choices=sorted(PRESETS),
+                    help="size/quality preset; without it an interactive menu is shown "
+                         "(or 'normal' when not run from a terminal)")
     ap.add_argument("--music-bitrate", help="override the music AAC bitrate, e.g. 80k")
     ap.add_argument("--dialog-bitrate", help="override the speech AAC bitrate, e.g. 32k")
     ap.add_argument("--movie-crf", help="override the H.264 CRF (18 = very good, 28 = small)")
     ap.add_argument("--movie-audio-bitrate", help="override the movie AAC bitrate, e.g. 96k")
     args = ap.parse_args()
-    q = dict(PRESETS[args.quality])
-    for key, val in (("music", args.music_bitrate), ("dialog", args.dialog_bitrate),
-                     ("crf", args.movie_crf), ("movie_audio", args.movie_audio_bitrate)):
-        if val:
-            q[key] = str(val)
+    overrides = (("music", args.music_bitrate), ("dialog", args.dialog_bitrate),
+                 ("crf", args.movie_crf), ("movie_audio", args.movie_audio_bitrate))
+    interactive = sys.stdin.isatty()
+    if args.bin is None:
+        if not interactive:
+            ap.error("the .bin path is required")
+        args.bin = ask_bin_path()
+    if args.quality is None and not any(v for _, v in overrides) and interactive:
+        quality, q = quality_menu()
+    else:
+        quality = args.quality or "normal"
+        q = dict(PRESETS[quality])
+        for key, val in overrides:
+            if val:
+                q[key] = str(val)
+                quality = "custom" if quality == "normal" and not args.quality else quality
+    if args.output is None:
+        args.output = Path(f"rechan-pack-{quality}.zip")
 
     t0 = time.time()
     bin_path = args.bin.resolve()
@@ -239,8 +327,7 @@ def main() -> int:
     if serial != EXPECTED_SERIAL:
         sys.exit(f"Error: wrong disc ({serial or 'unknown'}). Only the NTSC-U release {EXPECTED_SERIAL} is supported.")
     print(f"Serial {serial} OK")
-    print(f"Quality: {args.quality} (music {q['music']}, speech {q['dialog']}, "
-          f"movies crf {q['crf']} + audio {q['movie_audio']})")
+    print(f"Quality: {quality} ({describe(q)})")
 
     work = Path(tempfile.mkdtemp(prefix="rechan-pack-"))
     assets = work / "assets"

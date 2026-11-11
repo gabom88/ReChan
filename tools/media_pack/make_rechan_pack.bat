@@ -10,6 +10,8 @@ if "%~1"=="" (
 )
 set "PY=python"
 where py >nul 2>nul && set "PY=py -3"
-%PY% "%~dp0make_rechan_pack.py" "%~1" -o "%~dpn1-rechan-pack.zip" %2 %3 %4 %5 %6 %7 %8 %9
+pushd "%~dp1"
+%PY% "%~dp0make_rechan_pack.py" "%~1" %2 %3 %4 %5 %6 %7 %8 %9
+popd
 echo.
 pause

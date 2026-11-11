@@ -1,5 +1,6 @@
 #include "ai/behaviour.h"
 #include "pc/animwatch.h"
+#include "gen/time.h"
 #include "ai/activezn.h"
 #include "ai/colfight.h"
 #include "ai/cominter.h"
@@ -2000,6 +2001,8 @@ void Behaviour::InitPathAIState(LinearPath* path) {
     currentPath = path;
     currentPathNodeIndex = 0;
     field36 = 0;
+    lastActionPath = nullptr;
+    lastActionNodeIndex = 0xFFFFFFFFu;
 
     if (currentPath) {
         handlerThisOffset = 0;
@@ -2047,7 +2050,13 @@ void Behaviour::AiFollowPath(Behaviour* self) {
     }
 
     if (distToNode < PATH_NODE_REACHED_THRESHOLD) {
-        activeZone->DoActionsAtNode(path, (s32)nodeIndex, self->owner);
+        const u32 tick = g_time ? g_time->GetFrameCounter() : 0u;
+        const bool repeat = self->lastActionPath == path && self->lastActionNodeIndex == nodeIndex
+            && (tick - self->lastActionFrame) <= 1u;
+        activeZone->DoActionsAtNode(path, (s32)nodeIndex, self->owner, repeat);
+        self->lastActionPath = path;
+        self->lastActionNodeIndex = nodeIndex;
+        self->lastActionFrame = tick;
 
         self->currentPathNodeIndex = nodeIndex + 1;
         if (self->currentPathNodeIndex >= (u32)path->numPoints

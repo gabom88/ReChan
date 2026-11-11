@@ -22,6 +22,12 @@ struct Behaviour {
     LinearPath* currentPath = nullptr;
     u32 field36 = 0;
     u32 currentPathNodeIndex = 0;
+    // PC: node whose actions ran on the previous logic tick (see AiFollowPath).
+    // Lets a humanoid waiting at a node keep its state instead of re-entering
+    // it (and restarting its animation) every tick.
+    const LinearPath* lastActionPath = nullptr;
+    u32 lastActionNodeIndex = 0xFFFFFFFFu;
+    u32 lastActionFrame = 0;
 
     // PSX +44/+48/+52: NDMS think timers/decision cache.
     s32 ndmsThinkCounter = 0;

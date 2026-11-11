@@ -75,7 +75,9 @@ public:
     void GetActiveZoneCenterPoint(LVector& outCenter) const;
     LinearPath* FindFirstValidPath(Humanoid* humanoid);
     s32 DoAICheck(LinearPath* path, s32 nodeIndex, Humanoid* humanoid);
-    s32 DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* humanoid);
+    // repeat: the same humanoid already ran this node's actions on the previous
+    // logic tick and is still waiting there; state changes are not re-applied.
+    s32 DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* humanoid, bool repeat = false);
     bool IsPathNodeTerminator(LinearPath* path, s32 nodeIndex) const;
     bool AllowBreakoffOfDestinationNode(LinearPath* path, s32 nodeIndex) const;
 };

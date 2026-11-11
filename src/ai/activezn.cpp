@@ -237,7 +237,7 @@ s32 ActiveZone::DoAICheck(LinearPath* path, s32 nodeIndex, Humanoid* humanoid) {
     if (AnimWatch_IsTraceTarget(static_cast<const Thing*>(humanoid))) {
         char ids[64] = {};
         for (s32 i = 0; i < nodeAttrib->count && i < 63; i++) ids[i] = (char)nodeAttrib->ids[i];
-        LOG_ALWAYS("[AnimWatch] DoActionsAtNode node=%d/%d ids='%s' action=%d", nodeIndex, path->numPoints, ids,
+        LOG_ALWAYS("[AnimWatch] DoAICheck node=%d/%d ids='%s' action=%d", nodeIndex, path->numPoints, ids,
                    humanoid->actionState);
     }
     s32 pass = 1;
@@ -458,7 +458,7 @@ s32 ActiveZone::DoAICheck(LinearPath* path, s32 nodeIndex, Humanoid* humanoid) {
 }
 
 // PSX: DoActionsAtNode__10ActiveZoneP10LinearPathlP8Humanoid (ACTIVEZN.CPP:1378, 0x800A7784)
-s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* humanoid) {
+s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* humanoid, bool repeat) {
     MARKFUNCTION(0x800A7784);
 
     if (!path || !path->nodeAttribs || !humanoid || nodeIndex < 0 || nodeIndex >= path->numPoints) {
@@ -502,8 +502,15 @@ s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* human
                 humanoid->RequestAction(8);
                 break;
 
+            // While a humanoid waits at a node (the next node is a 'W'
+            // terminator), AiFollowPath re-runs this node every logic tick.
+            // Re-entering the same action state each tick restarts its
+            // animation, freezing the humanoid on frame 0/1 indefinitely; on
+            // repeats only the per-tick requests are re-issued.
             case 'h':
-                humanoid->SetActionState(AS_STAND, 0);
+                if (!repeat) {
+                    humanoid->SetActionState(AS_STAND, 0);
+                }
                 humanoid->RequestAction(7);
                 break;
 
@@ -512,6 +519,9 @@ s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* human
                 break;
 
             case 'j':
+                if (repeat) {
+                    break;
+                }
                 humanoid->field316 = nodeAttrib->GetAttrib('j');
                 humanoid->SetTauntAnim(nodeAttrib->GetAttrib('o'));
                 humanoid->SetActionState(AS_TAUNT_PAUSE, 0);
@@ -543,6 +553,9 @@ s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* human
                 break;
 
             case 'o':
+                if (repeat) {
+                    break;
+                }
                 humanoid->SetTauntAnim(nodeAttrib->GetAttrib('o'));
                 if (humanoid->actionState != AS_TAUNT_PAUSE) {
                     humanoid->FaceThingDesired(Player::s_player);
@@ -555,7 +568,9 @@ s32 ActiveZone::DoActionsAtNode(LinearPath* path, s32 nodeIndex, Humanoid* human
                 break;
 
             case 'q':
-                humanoid->SetActionState(AS_STAND, 0);
+                if (!repeat) {
+                    humanoid->SetActionState(AS_STAND, 0);
+                }
                 humanoid->RequestAction(5);
                 break;
 

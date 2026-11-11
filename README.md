@@ -45,6 +45,8 @@ Es el **mismo código C++ de ReChan** compilado a WebAssembly con Emscripten. **
 
 El panel **Listo** muestra el modo activo. Para cambiar de modo, pulsa **Borrar assets extraídos** (tus partidas se conservan) y carga el otro archivo. Si el modo ZIP no encuentra un archivo de audio o vídeo convertido, usa el original del juego.
 
+**Actualizaciones:** cuando se publica una versión nueva, la pantalla de inicio y el menú ☰ muestran «Nueva versión disponible» con el botón **Actualizar**, y el botón ☰ lleva un punto verde. El juego no cambia de versión a mitad de una partida: la nueva se descarga en segundo plano y se activa al pulsar Actualizar, que recarga la página (las partidas guardadas se conservan). Al pie de la pantalla de inicio y de Opciones se ve la versión actual y el enlace **Buscar actualizaciones**.
+
 **En iPhone/iPad:** en Safari toca **Compartir → Añadir a pantalla de inicio**. Así el juego se abre a pantalla completa (Safari no permite pantalla completa en páginas normales del iPhone) y el sistema no borra los datos guardados. Safari puede borrar el almacenamiento de las webs que no se visitan en 7 días, pero no el de las apps de la pantalla de inicio.
 
 ### Controles

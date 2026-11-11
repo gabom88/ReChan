@@ -348,3 +348,13 @@ body.portrait-play #touch-editor {
   top: calc(8px + var(--safe-t));
   transform: translateX(-50%);
 }
+
+/* Update notice */
+.update-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px;
+  margin: 12px 0; padding: 10px 14px; border-radius: 12px; background: #17402a; color: #c9f5d9;
+  border: 1px solid #2e7d4f; font-weight: 600; }
+.update-banner .update-warn { flex-basis: 100%; margin: 0; font-weight: 400; color: #a9d8bb; }
+.version-line { margin-top: 10px; opacity: .8; }
+.linkbtn { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.update-dot { position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; border-radius: 50%;
+  background: #3ddc84; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }

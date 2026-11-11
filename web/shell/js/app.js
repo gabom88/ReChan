@@ -535,15 +535,40 @@
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('dblclick', (e) => { if (playing) e.preventDefault(); });
 
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
-    }
+    wireUpdates();
 
     // ?autoplay skips the launcher when assets are present (handy from the home-screen icon).
     checkAssets().then(() => {
       if ((new URLSearchParams(location.search).has('autoplay') || testMode) &&
           !$('panel-ready').classList.contains('hidden')) startEngine();
     });
+  }
+
+  // "New version available" banner (launcher + ☰ menu), version line and
+  // "check for updates" link. See update.js.
+  function wireUpdates() {
+    if (testMode) return; // keep automated test runs on the build they started with
+    RechanUpdate.onChange((st) => {
+      const available = st.result === 'available';
+      for (const id of ['launcher-update', 'settings-update']) {
+        const box = $(id);
+        box.classList.toggle('hidden', !available);
+        box.querySelector('.update-text').textContent = available ? t('updateAvailable', { date: st.latestText }) : '';
+      }
+      $('menu-update-dot').classList.toggle('hidden', !available);
+      const status = { checking: t('updChecking'), latest: t('updLatest'), offline: t('updOffline'), available: t('updAvailableShort') }[st.result] || '';
+      document.querySelectorAll('.version-text').forEach((el) => {
+        el.textContent = t('versionLabel', { date: st.currentText }) + (status ? ' · ' + status : '');
+      });
+    });
+    document.querySelectorAll('.update-apply').forEach((b) => b.addEventListener('click', () => {
+      if (playing && !confirm(t('updateConfirm'))) return;
+      b.disabled = true;
+      b.textContent = t('updating');
+      RechanUpdate.apply();
+    }));
+    document.querySelectorAll('.version-check').forEach((b) => b.addEventListener('click', () => RechanUpdate.check()));
+    RechanUpdate.init();
   }
 
   wire();

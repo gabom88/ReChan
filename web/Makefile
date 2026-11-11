@@ -71,12 +71,16 @@ $(DIST)/rechan.js: $(OBJS) rechan_web.pre.js
 	@mkdir -p $(DIST)
 	$(CXX) $(OBJS) $(LDFLAGS) -o $@
 
-# Stamp the service worker with a build id so installed PWAs pick up updates.
-BUILD_ID  ?= $(shell date +%Y%m%d%H%M%S)
+# Stamp the build id (UTC) and commit into the service worker and the page;
+# version.json lets a running page see that a newer build was published.
+BUILD_ID  ?= $(shell date -u +%Y%m%d%H%M%S)
+COMMIT    ?= $(shell git -C $(ROOT) rev-parse --short HEAD 2>/dev/null || echo unknown)
 
 dist: $(DIST)/rechan.js
 	cp -r shell/. $(DIST)/
-	sed -i 's/__RECHAN_BUILD__/$(BUILD_ID)/' $(DIST)/sw.js
+	sed -i 's/__RECHAN_BUILD__/$(BUILD_ID)/' $(DIST)/sw.js $(DIST)/js/update.js
+	sed -i 's/__RECHAN_COMMIT__/$(COMMIT)/' $(DIST)/js/update.js
+	printf '{"build":"%s","commit":"%s"}\n' '$(BUILD_ID)' '$(COMMIT)' > $(DIST)/version.json
 	touch $(DIST)/.nojekyll
 
 clean:

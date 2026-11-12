@@ -1,106 +1,131 @@
+<h1 align="center">ReChan Web</h1>
+
+<p align="center">
+  <b>Jackie Chan Stuntmaster en tu navegador</b>: PC, Mac, iPhone, iPad y Android, sin instalar nada.<br>
+  Port web de <a href="https://github.com/SilverwireGames/ReChan">ReChan</a>, por Bardock.
+</p>
+
+<p align="center">
+  <a href="https://gabom88.github.io/ReChan/"><b>▶ Jugar ahora</b></a> ·
+  <a href="GUIA-PAQUETE-ZIP.md">Guía del paquete ZIP</a> ·
+  <a href="#controles">Controles</a> ·
+  <a href="#créditos">Créditos</a>
+</p>
+
+<p align="center">
+  <img src="res/screenshots/web/game-factory.jpg" width="49%" alt="Pelea en la fábrica">
+  <img src="res/screenshots/web/game-waterfront.jpg" width="49%" alt="Patada en el puerto">
+  <img src="res/screenshots/web/game-temple.jpg" width="49%" alt="Templo Shaolin junto a la cascada">
+  <img src="res/screenshots/web/game-rooftop.jpg" width="49%" alt="Pelea en la azotea">
+</p>
+<p align="center">
+  <img src="res/screenshots/web/iphone-landscape.jpg" width="62%" alt="iPhone en horizontal con el mando táctil">
+  <img src="res/screenshots/web/iphone-direct.jpg" width="21%" alt="iPhone en vertical con los ataques directos">
+</p>
+
 > [!NOTE]
-> **Este repositorio es un fork de [SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan)** con un **port nativo para navegador** (WebAssembly + WebGL2) jugable desde GitHub Pages, Safari en iPhone y como PWA.
-> Todo el trabajo de ingeniería inversa y la reimplementación del juego son obra del creador original de ReChan, **_AG ([SilverwireGames](https://github.com/SilverwireGames))**. Este fork solo añade la capa web. Más abajo está el README original.
-
-# ReChan Web — port para navegador
-
-**Jugar:** https://gabom88.github.io/ReChan/ (una vez activado GitHub Pages, ver [Publicación](#publicación-en-github-pages))
-
-<p align="center">
-  <img src="res/screenshots/web/iphone-touch.png" width="49%" alt="ReChan en iPhone con el mando táctil">
-  <img src="res/screenshots/web/iphone-touch-editor.png" width="49%" alt="Editor del mando táctil">
-</p>
-<p align="center">
-  <img src="res/screenshots/web/launcher-desktop.png" width="60%" alt="Lanzador: elegir la imagen del disco">
-</p>
-
-<sub>Capturas tomadas con una imagen de disco de prueba (sin los assets reales del juego), por eso el motor se queda en su primera pantalla. Con el disco real se ve el juego completo, como en las capturas del README original.</sub>
+> Este repositorio es un fork de **[SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan)**. La ingeniería inversa y la reimplementación del juego son obra de su creador, **_AG (SilverwireGames)**. Este fork añade la versión para navegador. Necesitas tu **propia copia** del juego: aquí no se distribuye ningún dato del original.
 
 ## Qué es
 
-Es el **mismo código C++ de ReChan** compilado a WebAssembly con Emscripten. **No es un emulador de PlayStation** ni una reescritura en JavaScript. El renderizado usa el backend **OpenGL ES 3.0** que ReChan ya tenía para Switch (GLES 3.0 equivale a WebGL2), así que los shaders y la lógica del juego son los mismos que en PC.
+Es el mismo código C++ de ReChan compilado a WebAssembly, que se ejecuta con WebGL2. **No es un emulador de PlayStation**: el juego está reimplementado, así que se ve más nítido, va más fluido y admite mejoras como sombras dinámicas y antialiasing.
 
-- **Sin hilos (single-threaded):** no necesita `SharedArrayBuffer` ni las cabeceras COOP/COEP, así que funciona en cualquier hosting estático (GitHub Pages) y en Safari de iOS.
-- **Sin depender del BIN:** el disco se lee **una sola vez, en tu dispositivo**, y se guardan solo los assets necesarios. Después la imagen ya no hace falta.
-- **Mando táctil configurable**, además de teclado, ratón y mandos físicos (Gamepad API: Xbox, PlayStation, MFi…).
-- **PWA instalable:** pantalla completa, orientación horizontal, icono propio y funcionamiento sin conexión una vez cargado.
+- 🎮 **Juega donde quieras:** en el navegador, a pantalla completa o instalado como app (PWA), también sin conexión.
+- 💿 **Tu disco, una sola vez:** el juego lee tu `.bin` en tu propio dispositivo, sin subirlo a ningún sitio. Guarda solo lo que necesita y después ya no hace falta la imagen.
+- 📱 **Mando táctil configurable** en horizontal o en vertical, además de teclado, ratón y mandos (Xbox, PlayStation, MFi…).
+- 🥋 **Ataques directos:** un botón para cada golpe de Jackie, para no tener que encadenar combos.
+- 🎵 **Modo experimental ZIP:** audio y vídeo en formatos modernos (AAC y H.264). Suenan sin cortes y el paquete ocupa menos de 100 MB.
+- 🔄 **Actualizaciones con un toque:** la app avisa cuando hay una versión nueva.
 
-## Cómo jugar
+## Cómo empezar
 
-1. Abre la página en un navegador con WebGL2 (Safari 15+ en iPhone/iPad/Mac, Chrome, Edge o Firefox).
-2. Pulsa **Elegir imagen del disco** y selecciona tu `.bin` o `.iso` de *Jackie Chan Stuntmaster* **NTSC-U (SLUS-00684)**, sacado de tu propia copia.
-3. ReChan verifica el serial del disco y extrae solo lo que necesita (carpetas `fe`, `rchars`, `rtarget`, `scr`, `sound`, `tim`, `xc` y seis archivos de la raíz). La extracción es la misma que hace el extractor del juego en PC, y su resultado es byte a byte igual al de `tools/extract_assets/extract_psx_bin.py`.
-4. Pulsa **Jugar**. Las siguientes veces el juego arranca directamente, sin pedir el disco.
+1. Abre **https://gabom88.github.io/ReChan/** en un navegador moderno: Safari 15+, Chrome, Edge o Firefox.
+2. Pulsa **Elegir imagen del disco** y selecciona tu `.bin` o `.iso` de *Jackie Chan Stuntmaster* **NTSC-U (SLUS-00684)**.
+3. Cuando termine la extracción, pulsa **Jugar**. Las siguientes veces el juego arranca directamente.
 
-### Dos modos: BIN (estable) y ZIP (experimental)
+**iPhone / iPad:** en Safari toca **Compartir → Añadir a pantalla de inicio**. Así se juega a pantalla completa y el sistema no borra tus datos. Safari borra el almacenamiento de las webs que no se visitan en 7 días, pero no el de las apps de la pantalla de inicio.
 
-- **Modo BIN · estable:** cargas el `.bin` o `.iso` y el juego usa el audio y el vídeo originales de PlayStation. Es el modo de siempre.
-- **Modo ZIP · experimental:** cargas un ZIP preparado en tu PC. **Guía paso a paso: [GUIA-PAQUETE-ZIP.md](GUIA-PAQUETE-ZIP.md)**. El conversor se descarga de [rechan-conversor.zip](https://gabom88.github.io/ReChan/rechan-conversor.zip) y funciona con doble clic en Mac y Windows. Detalles técnicos en [`tools/media_pack`](tools/media_pack/README.md). La música y las voces van en AAC y los vídeos en H.264 (MP4), que el navegador decodifica por hardware. El ZIP ocupa mucho menos que el BIN. Lo generas en tu PC así:
+### Modo experimental: paquete ZIP (opcional)
 
-  ```bash
-  python3 tools/media_pack/make_rechan_pack.py "Jackie Chan Stuntmaster (USA).bin"
-  ```
+En lugar del `.bin` puedes cargar un **paquete ZIP** creado en tu ordenador. La música, las voces y los vídeos van en formatos que el navegador reproduce de forma nativa, así que el audio no se entrecorta, los vídeos se ven mejor y el paquete ocupa menos de 100 MB.
 
-  En Windows también puedes arrastrar el `.bin` sobre `tools/media_pack/make_rechan_pack.bat`. Necesitas Python 3.9+ y ffmpeg. El ZIP es solo para uso personal: no lo compartas.
+👉 **[Guía paso a paso para crear tu paquete ZIP](GUIA-PAQUETE-ZIP.md)**. El conversor ([rechan-conversor.zip](https://gabom88.github.io/ReChan/rechan-conversor.zip)) funciona con doble clic en Mac y Windows.
 
-El panel **Listo** muestra el modo activo. Para cambiar de modo, pulsa **Borrar assets extraídos** (tus partidas se conservan) y carga el otro archivo. Si el modo ZIP no encuentra un archivo de audio o vídeo convertido, usa el original del juego.
+El modo con `.bin` sigue siendo el **estable**. La pantalla de inicio muestra el modo activo. Para cambiar de modo, ve a **Opciones → Borrar assets extraídos** (tus partidas se conservan) y carga el otro archivo. El ZIP contiene el juego: es solo para tu uso personal.
 
-**Actualizaciones:** cuando se publica una versión nueva, la pantalla de inicio y el menú ☰ muestran «Nueva versión disponible» con el botón **Actualizar**, y el botón ☰ lleva un punto verde. El juego no cambia de versión a mitad de una partida: la nueva se descarga en segundo plano y se activa al pulsar Actualizar, que recarga la página (las partidas guardadas se conservan). Al pie de la pantalla de inicio y de Opciones se ve la versión actual y el enlace **Buscar actualizaciones**.
-
-**En iPhone/iPad:** en Safari toca **Compartir → Añadir a pantalla de inicio**. Así el juego se abre a pantalla completa (Safari no permite pantalla completa en páginas normales del iPhone) y el sistema no borra los datos guardados. Safari puede borrar el almacenamiento de las webs que no se visitan en 7 días, pero no el de las apps de la pantalla de inicio.
-
-### Controles
+## Controles
 
 | Acción | Teclado | Mando | Táctil |
 |---|---|---|---|
-| Moverse | W A S D | Stick izquierdo / cruceta | Joystick o cruceta (configurable) |
-| Saltar | Espacio | ✕ / A | ✕ |
-| Puñetazo | J / clic izquierdo | □ / X | □ |
-| Patada | K / clic derecho | △ / Y | △ |
-| Agarrar | E / clic central | ○ / B | ○ |
-| Contraataque | C | L1 | L1 |
-| Rodar | Ctrl izquierdo | R1 | R1 |
-| Desplazamiento lateral | Shift izquierdo | R2 | R2 |
-| Estado | Tab | L2 | L2 |
-| Menú | Esc | Start | START |
+| Moverse | W A S D | Stick izquierdo / cruceta | Cruceta o joystick |
+| Saltar | Espacio | ✕ / A | ⤒ |
+| Puñetazo | J / clic izquierdo | □ / X | ✊ |
+| Patada | K / clic derecho | △ / Y | 🦶 |
+| Agarrar | E / clic central | ○ / B | ✋ |
+| Contraataque | C | L1 | 🛡 |
+| Rodar (maroma) | Ctrl izquierdo | R1 | ⟳ |
+| Desplazamiento lateral | Shift izquierdo | R2 | ↔ |
+| Estado | Tab | L2 | ♥ |
+| Menú | Esc | Start | ⏸ |
 
-El juego permite reasignar las teclas desde sus propias opciones. El botón **☰** de arriba abre las opciones de la versión web.
+El juego permite reasignar las teclas desde sus opciones. El botón **☰** abre las opciones de la versión web.
 
-### Mods (Pausa → Opciones → Mods)
+### Mando táctil
 
-- **Saltos infinitos:** Jackie vuelve a saltar en el aire cada vez que pulsas saltar.
-- **Atravesar paredes:** Jackie ignora las paredes. El suelo, las cajas y los obstáculos se siguen respetando, así que si atraviesas una pared exterior del nivel y detrás no hay suelo, caerás.
-- **Cámara sigue a Jackie:** la cámara mantiene el ángulo y la distancia que el nivel define en cada zona, pero ya no limita cuánto puede desplazarse, así que Jackie queda siempre centrado.
-- **Mods instalados:** la lista de mods de archivos de siempre (carpeta `~mods`).
+En **Configurar mando táctil**, desde la pantalla de inicio o desde **☰** durante la partida, puedes:
 
-Dentro de un nivel, **☰ → Opciones → Volver al mapa** (el menú de la página web, el mismo del Modo de prueba) sale del nivel tras pedir confirmación y regresa al mapa donde se eligen los niveles. También está en **Pausa → Opciones → Volver al mapa**, y equivale a «Salir del nivel» del menú de pausa.
+- **arrastrar** cualquier control para moverlo, y **tocarlo** para cambiar su tamaño u ocultarlo;
+- ajustar la **opacidad**, elegir **cruceta o joystick** y activar la **vibración** (donde el navegador la admite);
+- jugar **en horizontal o en vertical**. En vertical, el juego ocupa la parte de arriba y los controles quedan debajo, como en una consola portátil. Cada orientación guarda su propia distribución. La cruceta es la de [GBoy-JS](https://github.com/gabom88/gemuboy-js).
 
-Los mods, igual que los trucos, se desactivan al cargar una partida. El truco **Rumbo al cielo** (Opciones → Trucos) hace que los enemigos derrotados asciendan al cielo; si está desactivado, simplemente desaparecen como en el original. El diagnóstico de **F8** indica qué trucos y mods están activos.
+En modo **Automático**, el mando táctil se oculta al usar un teclado o un mando físico y vuelve a aparecer al tocar la pantalla.
 
-### Configurar el mando táctil
+### Ataques directos
 
-Se puede jugar **en horizontal o en vertical**. En vertical, el juego ocupa la franja superior (4:3) y los controles quedan debajo, como en una consola portátil; cada orientación guarda su propia distribución. La cruceta es la misma de [GBoy-JS](https://github.com/gabom88/gemuboy-js), y los botones de acción muestran un dibujo de lo que hacen (puño, pie, salto, mano, escudo, etc.).
+Activa **Golpes: directos** en la configuración del mando táctil. Los botones de puñetazo y patada se sustituyen por un botón para cada golpe de Jackie. Cada golpe sale con su daño, su reacción en el enemigo y sus combos de siempre.
 
-Desde el lanzador (**Configurar mando táctil**) o durante la partida (**☰ → Configurar mando táctil**):
+| Fila | Botones |
+|---|---|
+| Puñetazos | 1 – 7 |
+| Patadas | 1 – 7 |
+| Especiales (dorados) | puñetazo de espalda ↺ · puñetazo fuerte ! · golpe especial ★ · patada de espalda ↺ · patada fuerte ! · **maroma + patada ⟳** |
 
-- **Arrastra** cualquier control para moverlo.
-- **Tócalo** para seleccionarlo y cambiar su **tamaño** u **ocultarlo**.
-- Ajusta la **opacidad**, elige **cruceta o joystick** y activa o desactiva la **vibración** (la vibración solo funciona en navegadores que la soportan; Safari de iOS no).
-- **Mostrar todos** vuelve a mostrar los controles ocultos y **Restablecer** recupera la distribución por defecto.
-- **Golpes: directos (1–7 + especiales):** modo de control extra que sustituye los botones de puño y patada por **7 puñetazos y 7 patadas numerados, más 5 especiales**. Cada botón lanza directamente ese golpe del árbol de combos de Jackie (con su daño, su reacción en el enemigo y sus continuaciones normales), en lugar de tener que encadenarlo. Solo se aplica a la pelea sin arma.
+- **Maroma + patada** hace la maroma y, a mitad, la patada, igual que si pulsaras R1 y enseguida patada.
+- Los movimientos que dependen de la situación salen como en el original aunque uses botones directos:
+  - golpes, patada y lanzamiento con un enemigo agarrado;
+  - ataque en salto;
+  - patada contra la pared;
+  - ataque al levantarte del suelo;
+  - contraataques.
+- **Con teclado:** en **☰ → Opciones → Teclas de golpes** puedes asignar una tecla a cada uno de los 20 golpes. Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . / ;`.
 
-  | Botón | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-  |---|---|---|---|---|---|---|---|
-  | Puñetazo (animación) | 57 | 58 | 59 | 60 | 61 | 62 | 26 |
-  | Patada (animación) | 53 | 54 | 55 | 56 | 44 | 42 | 48 |
+### Gráficos, mods y más
 
-  **Con teclado:** en **☰ → Opciones → Teclas de golpes** se asigna una tecla a cada uno de los 19 golpes (pulsa el botón y luego la tecla; Esc cancela, Retroceso borra). Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . /`. Funcionan siempre, sin importar el modo del mando táctil. Mantener la tecla o el dedo no convierte el golpe en otro: solo se envía un toque breve.
+- **Gráficos** (Pausa → Opciones): resolución, **antialiasing** y **sombras dinámicas**, como en PC. En iPhone se recomiendan sombras «Baja» o «Media». En **☰ → Opciones** también puedes bajar la resolución de render si tu dispositivo va justo.
+- **Mods** (Pausa → Opciones → Mods): **saltos infinitos**, **atravesar paredes** y **cámara que sigue a Jackie**. Como los trucos, se desactivan al cargar una partida.
+- **Volver al mapa:** **☰ → Opciones → Volver al mapa** sale del nivel y vuelve al mapa de selección de niveles.
+- **Actualizaciones:** cuando hay una versión nueva, la pantalla de inicio y el menú **☰** muestran «Nueva versión disponible» con el botón **Actualizar**, y el botón ☰ lleva un punto verde. Al pie de la pantalla de inicio ves tu versión y el enlace **Buscar actualizaciones**.
+- **¿Algo falla?** Pulsa **F8** o **☰ → Copiar diagnóstico** y pega el texto en un [issue](https://github.com/gabom88/ReChan/issues).
 
-  Especiales (fila dorada): puñetazo de espalda ↺ (64), puñetazo fuerte ! (23), golpe especial ★ (63), patada de espalda ↺ (65) y patada fuerte ! (67). El golpe especial es un agarre: necesita un enemigo al alcance.
+## Créditos
 
-La configuración se guarda en el navegador. En modo **Automático**, el mando táctil se oculta al usar un teclado o mando físico y vuelve a aparecer al tocar la pantalla. También puedes fijarlo en **Siempre** o **Nunca**, y bajar la **resolución de render** si el dispositivo va justo.
+- **ReChan:** creado por **_AG**, de [SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan). Suyos son la ingeniería inversa, la reimplementación del juego, el motor (libp3d), el port a Switch (cuyo backend GLES hace posible esta versión) y el extractor de disco. Licencia MIT.
+- **Port web:** Bardock ([gabom88](https://github.com/gabom88)).
+- **Bibliotecas:** [Emscripten](https://emscripten.org/), [miniaudio](https://miniaud.io/), [Dear ImGui](https://github.com/ocornut/imgui), [cgltf](https://github.com/jkuhlmann/cgltf), [stb](https://github.com/nothings/stb) y [ffmpeg](https://ffmpeg.org/) (en el conversor).
+- *Jackie Chan Stuntmaster* y todas sus marcas, personajes y assets pertenecen a sus respectivos dueños. Este proyecto no distribuye ningún dato del juego original.
 
-## Cómo funciona (sin depender del BIN)
+---
+
+# Parte técnica
+
+<details>
+<summary><b>Sobre este repositorio</b></summary>
+
+El port web se compila a partir del mismo código que la versión de PC: `src/` (el juego), `vendor/libp3d` (el motor) y `res/pc` (textos, fuentes y texturas propios de ReChan). Las partes de Windows, Linux y Switch se mantienen para seguir recibiendo las mejoras del proyecto original y para comparar la web con la versión nativa en las pruebas. Lo propio del port está en `web/`, `tools/media_pack/` y los cambios marcados con `RC_PLATFORM_WEB`.
+
+</details>
+
+### Cómo funciona (sin depender del BIN)
 
 ```text
  .bin / .iso (en tu dispositivo)
@@ -115,14 +140,17 @@ La configuración se guarda en el navegador. En modo **Automático**, el mando t
  p3d::io (vendor/libp3d/p3d/fileio.cpp) ── el motor abre y lee los archivos como siempre
 ```
 
-- Los Blobs leídos de IndexedDB los guarda el navegador en disco, así que **los assets no ocupan RAM**. El motor pide solo los bytes que necesita: los archivos pequeños se leen enteros al abrirlos y los grandes (vídeos, bancos de sonido) mediante una ventana de lectura anticipada de 1 MB. Esto es clave para que no se cierre en un iPhone.
-- Las lecturas del navegador son asíncronas. Con **Asyncify**, el motor se pausa en la lectura y continúa cuando llegan los datos, sin hilos y sin reescribir el código del juego.
-- Las partidas y opciones (`userfiles/`) se guardan en IndexedDB mediante IDBFS.
-- Los textos, fuentes y texturas propios de ReChan (`res/pc`) van empaquetados en `rechan.data`. No incluyen nada del juego original.
+- **Extracción:** es la misma que hace el extractor del juego en PC. Las carpetas son `fe`, `rchars`, `rtarget`, `scr`, `sound`, `tim` y `xc`, más seis archivos de la raíz. El resultado es idéntico byte a byte al de `tools/extract_assets/extract_psx_bin.py`.
+- **Memoria:** el navegador guarda en disco los Blobs de IndexedDB, así que los assets no ocupan RAM. Los archivos pequeños se leen enteros al abrirlos; los grandes, con una ventana de lectura anticipada de 1 MB. Esto es clave para que no se cierre en un iPhone.
+- **Asyncify:** el motor se pausa en cada lectura asíncrona y continúa cuando llegan los datos, sin hilos y sin reescribir el código del juego.
+- **Partidas y opciones:** `userfiles/` se guarda en IndexedDB mediante IDBFS.
+- **Modo ZIP:** `web/shell/js/zippack.js` importa el paquete y `media.js` reproduce el AAC y el H.264 con el navegador. Los hooks del motor están en `src/pc/webmedia.cpp`.
+- **Sin hilos:** no necesita `SharedArrayBuffer` ni COOP/COEP, así que funciona en cualquier hosting estático y en Safari de iOS.
+- **Render:** usa el backend OpenGL ES 3.0 de ReChan (GLES 3.0 equivale a WebGL2), con MSAA y sombras en cascada activados para la web.
 
-## Compilar
+### Compilar
 
-Requisitos: [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (probado con la versión 7.0.0), `make` y Python 3.
+Requisitos: [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (probado con la 7.0.0), `make` y Python 3.
 
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
@@ -136,60 +164,47 @@ cd emsdk && ./emsdk install 7.0.0 && ./emsdk activate 7.0.0 && source ./emsdk_en
 make -C web -j"$(nproc)"
 ```
 
-El resultado queda en `web/dist/`: son archivos estáticos listos para publicar. Para probar en local:
+El resultado queda en `web/dist/`, con el `version.json` y el `rechan-conversor.zip`. Para probarlo en local:
 
 ```bash
 python3 -m http.server -d web/dist 8080
 ```
 
-Después abre `http://localhost:8080`. Usa `localhost` o HTTPS: el service worker no funciona en otros orígenes HTTP. `make -C web DEBUG=1` genera un build con símbolos.
+Abre `http://localhost:8080`. Usa `localhost` o HTTPS, porque el service worker no funciona en otros orígenes HTTP. `make -C web DEBUG=1` genera un build con símbolos.
 
-## Publicación en GitHub Pages
+### Publicación en GitHub Pages
 
-El workflow [`.github/workflows/web.yml`](.github/workflows/web.yml) compila el port y lo publica en cada push a `main`. Solo hay que activarlo una vez:
+El workflow [`.github/workflows/web.yml`](.github/workflows/web.yml) compila y publica en cada push a `main`. Solo hay que activarlo una vez en **Settings → Pages → Build and deployment → Source: «GitHub Actions»**. También se puede lanzar a mano desde **Actions → Web (GitHub Pages) → Run workflow**.
 
-**Settings → Pages → Build and deployment → Source: «GitHub Actions»**
-
-También se puede lanzar a mano desde la pestaña **Actions** (*Web (GitHub Pages)* → *Run workflow*).
-
-## Cambios respecto a ReChan
+### Cambios respecto a ReChan
 
 | Archivo | Cambio |
 |---|---|
-| `web/` | Makefile de Emscripten, glue (`rechan_web.pre.js`) y la página: lanzador, extractor, almacén IndexedDB, entrada, mando táctil, PWA y service worker. |
-| `vendor/libp3d/pddi/gles/glesweb.{h,cpp}` | Ventana WebGL2 y mando para la web, sobre el backend GLES 3.0 existente. |
-| `vendor/libp3d/pddi/gles/glesrender.{h,cpp}` | Las partes exclusivas de Switch (EGL/NWindow, HID) quedan tras `#if`. |
+| `web/` | Makefile de Emscripten, glue (`rechan_web.pre.js`) y la página: lanzador, extractor, importador ZIP, almacén IndexedDB, entrada, mando táctil, actualizaciones, PWA y service worker. |
+| `tools/media_pack/` | Conversor del paquete ZIP (`make_rechan_pack.py`, decodificador ADPCM `psx_audio.py`, lanzadores y `build_tool_zip.py`). |
+| `vendor/libp3d/pddi/gles/glesweb.{h,cpp}` | Ventana WebGL2 y mando para la web, sobre el backend GLES 3.0. |
+| `vendor/libp3d/pddi/gles/glesrender.{h,cpp}` | Partes exclusivas de Switch tras `#if`. En la web, MSAA, cascadas de sombras e id de caster R32UI. |
 | `vendor/libp3d/p3d/fileio.{h,cpp}` | Lectura perezosa de assets desde IndexedDB y guardado persistente de `userfiles/`. |
-| `src/gen/main.cpp`, `src/gen/time.cpp` | Arranque web; el ritmo de fotogramas lo marca `requestAnimationFrame` (sin bucles de espera). |
-| `src/pc/audio.cpp` | Búfer de Web Audio más grande (miniaudio). |
-| `src/extra/psxdiscextractor.cpp`, `src/pc/crashreporter.cpp`, `src/gen/config.h`, `src/gen/savegame.cpp` | Sin hilos ni autoactualizador en la web; guardado persistente. |
+| `src/pc/webmedia.*`, `src/pc/webdiag.*`, `src/pc/autotest.*`, `src/pc/animwatch.*` | Audio y vídeo del modo ZIP, puente con la página, modo de prueba y detector de animaciones atascadas. |
+| `src/ai/*`, `src/gen/*`, `src/extra/*` | Correcciones (personajes congelados, callbacks de animación en wasm), ataques directos, mods, «Volver al mapa». |
 
-Todos los cambios en C++ están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN__`, así que los builds de Windows, Linux y Switch no cambian.
+Los cambios específicos de la web están protegidos con `RC_PLATFORM_WEB` / `__EMSCRIPTEN__`, así que los builds de Windows, Linux y Switch no cambian.
 
-### Estado y limitaciones conocidas
+### Notas y limitaciones
 
-- Lo probado en Chromium (escritorio y emulación de iPhone): compilación completa, extracción (`.bin` raw 2352 y `.iso` 2048), arranque del motor con WebGL2, mando táctil, persistencia de partidas y PWA. **Falta probarlo con el disco real** en Safari/iPhone: el rendimiento y la memoria en partida completa están sin medir.
-- **Gráficos:** el antialiasing (MSAA) y las sombras dinámicas funcionan igual que en PC. El MSAA se ajusta al máximo que permita el navegador (normalmente 4×; en el menú se muestra el valor aplicado). En la web, «Muy alta» en sombras usa mapas de 4096 px en vez de 8192, porque los de 8192 necesitan unos 1,5 GB de memoria de vídeo. En iPhone se recomienda «Baja» o «Media».
-- El audio usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
-- Como en PC, solo se admite la versión **NTSC-U (SLUS-00684)**.
-- El build web se compila con `-fno-strict-aliasing -fwrapv` para tener la misma semántica que MSVC (el compilador con el que se desarrolla ReChan). Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.
-
-- **Modo ZIP:** se probó en Chromium con un disco sintético. Funcionan la importación, la música en M4A, los vídeos en MP4 (con botón de saltar) y el resto del juego en modo BIN sin cambios. **Falta probar el script con el disco real**, en especial la conversión de los `.str`.
+- Solo se admite la versión **NTSC-U (SLUS-00684)**, como en PC.
+- **Sombras en la web:** «Muy alta» usa mapas de 4096 px en vez de 8192, porque los de 8192 necesitarían unos 1,5 GB de memoria de vídeo.
+- **MSAA:** se ajusta al máximo que admite el navegador, normalmente 4×.
+- **Audio:** usa `ScriptProcessorNode` (Web Audio sin hilos). Funciona en todos los navegadores, aunque está marcado como obsoleto.
+- **Compilación:** se usa `-fno-strict-aliasing -fwrapv` para igualar la semántica de MSVC. Sin esas opciones, Clang `-O3` puede romper el código reimplementado de PSX, que hace mucho *type punning*.
+- **Capturas:** las de este README son de la versión web, tomadas en Chromium con sombras y antialiasing activados.
 
 ### Modo de prueba
 
-En **☰ → Opciones → Modo de prueba** eliges un nivel (o todos) y la duración. El juego carga el nivel directamente, pelea solo, recorre todos los enemigos y al final indica si algún personaje se quedó atascado. Por URL: `?autotest=NIVEL&minutes=N` (con `fight=0` y `tour=0` se desactivan el combate y el recorrido). El mismo modo existe en el ejecutable (`--autotest N --fight --tour 450`), lo que permite comparar la versión web con la nativa.
+En **☰ → Opciones → Modo de prueba** eliges un nivel (o todos) y la duración. El juego carga el nivel, pelea solo, recorre todos los enemigos y al final indica si algún personaje se quedó atascado.
 
-### Si algo falla: diagnóstico
-
-Durante la partida pulsa **F8** (o **☰ → Copiar diagnóstico**). Se copia al portapapeles el estado del motor y de Jackie (acción, animación, entrada pulsada, script activo) junto con las últimas líneas del log. Pégalo en un issue para poder localizar el fallo.
-
-## Créditos
-
-- **ReChan:** creado por **_AG** — [SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan). La ingeniería inversa, la reimplementación del juego, el motor (libp3d), el port a Switch (cuyo backend GLES hace posible esta versión) y el extractor de disco original son obra suya. Licencia MIT.
-- **Port web:** [gabom88](https://github.com/gabom88) (este fork).
-- **Bibliotecas:** [Emscripten](https://emscripten.org/), [miniaudio](https://miniaud.io/), [Dear ImGui](https://github.com/ocornut/imgui), [cgltf](https://github.com/jkuhlmann/cgltf) y [stb](https://github.com/nothings/stb).
-- *Jackie Chan Stuntmaster* y todas sus marcas, personajes y assets pertenecen a sus respectivos dueños. Este proyecto no distribuye ningún dato del juego original.
+- **Por URL:** `?autotest=NIVEL&minutes=N`. Con `fight=0` y `tour=0` se desactivan el combate y el recorrido.
+- **En el ejecutable:** `--autotest N --fight --tour 450`. Sirve para comparar la versión web con la nativa.
 
 ---
 

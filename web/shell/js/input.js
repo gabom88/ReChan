@@ -55,7 +55,7 @@ const RechanInput = (() => {
   const DIRECT_DEFAULT_KEYS = {
     1: 'Digit1', 2: 'Digit2', 3: 'Digit3', 4: 'Digit4', 5: 'Digit5', 6: 'Digit6', 7: 'Digit7',
     8: 'KeyZ', 9: 'KeyX', 10: 'KeyV', 11: 'KeyB', 12: 'KeyN', 13: 'KeyM', 14: 'Comma',
-    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash', 20: 'Semicolon',
+    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash', 20: 'Semicolon', 21: 'Quote',
   };
   // Moves that only exist inside another action are played as the real input
   // sequence, so the game picks them exactly as with a pad. 20 = dive roll
@@ -64,7 +64,7 @@ const RechanInput = (() => {
   const DIRECT_SEQUENCES = {
     20: [[0, 90, 'RB'], [170, 280, 'Y']],
   };
-  const DIRECT_ENGINE_MAX = 19; // moves the engine resolves itself (RcWebInput.directMove)
+  const DIRECT_ENGINE_MAX = 21; // moves the engine resolves itself (RcWebInput.directMove)
   let directKeys = {};
   try { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS, JSON.parse(localStorage.getItem(DIRECT_KEYS_STORAGE) || '{}')); }
   catch (_) { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS); }
@@ -169,7 +169,7 @@ const RechanInput = (() => {
     dv.setInt32(OFF.canvasW, canvasW, true);
     dv.setInt32(OFF.canvasH, canvasH, true);
     // Sequence moves go through the pad only; the engine never sees them.
-    dv.setInt32(OFF.directMove, directMove <= DIRECT_ENGINE_MAX ? directMove : 0, true);
+    dv.setInt32(OFF.directMove, (directMove <= DIRECT_ENGINE_MAX && !DIRECT_SEQUENCES[directMove]) ? directMove : 0, true);
   }
 
   function resizeCanvas() {

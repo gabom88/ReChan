@@ -94,16 +94,17 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
 |---|---|
 | Puñetazos | 1 – 7 |
 | Patadas | 1 – 7 |
-| Especiales (dorados) | puñetazo de espalda ↺ · puñetazo fuerte ! · golpe especial ★ · patada de espalda ↺ · patada fuerte ! · **maroma + patada ⟳** |
+| Especiales (dorados) | puñetazo de espalda ↺ · puñetazo fuerte ! · golpe especial ★ · patada de espalda ↺ · patada fuerte ! · **maroma + patada ⟳** · **patada de maroma ↯** |
 
-- **Maroma + patada** hace la maroma y, a mitad, la patada, igual que si pulsaras R1 y enseguida patada.
+- **Maroma + patada (⟳)** hace la maroma y, a mitad, la patada, igual que si pulsaras R1 y enseguida patada.
+- **Patada de maroma (↯)** lanza solo esa patada baja, sin la maroma.
 - Los movimientos que dependen de la situación salen como en el original aunque uses botones directos:
   - golpes, patada y lanzamiento con un enemigo agarrado;
   - ataque en salto;
   - patada contra la pared;
   - ataque al levantarte del suelo;
   - contraataques.
-- **Con teclado:** en **☰ → Opciones → Teclas de golpes** puedes asignar una tecla a cada uno de los 20 golpes. Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . / ;`.
+- **Con teclado:** en **☰ → Opciones → Teclas de golpes** puedes asignar una tecla a cada uno de los 21 golpes. Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . / ; '`.
 
 ### Gráficos, mods y más
 

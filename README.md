@@ -1,9 +1,15 @@
 <h1 align="center">ReChan Web</h1>
 
 <p align="center">
+  <img src="res/screenshots/title.png">
+</p>
+
+<p align="center">
   <b>Jackie Chan Stuntmaster en tu navegador</b>: PC, Mac, iPhone, iPad y Android, sin instalar nada.<br>
   Port web de <a href="https://github.com/SilverwireGames/ReChan">ReChan</a>, por Bardock.
 </p>
+
+<img src="https://silverwiregames.com/rechan/rechanlogo2.png">
 
 <p align="center">
   <a href="https://gabom88.github.io/ReChan/"><b>▶ Jugar ahora</b></a> ·

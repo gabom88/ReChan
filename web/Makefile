@@ -81,6 +81,7 @@ dist: $(DIST)/rechan.js
 	sed -i 's/__RECHAN_BUILD__/$(BUILD_ID)/' $(DIST)/sw.js $(DIST)/js/update.js
 	sed -i 's/__RECHAN_COMMIT__/$(COMMIT)/' $(DIST)/js/update.js
 	printf '{"build":"%s","commit":"%s"}\n' '$(BUILD_ID)' '$(COMMIT)' > $(DIST)/version.json
+	python3 $(ROOT)/tools/media_pack/build_tool_zip.py $(DIST)/rechan-conversor.zip
 	touch $(DIST)/.nojekyll
 
 clean:

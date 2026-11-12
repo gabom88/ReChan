@@ -295,7 +295,14 @@ body.portrait-play #menu-btn { top: calc(100vw * .75 + 6px + var(--safe-t)); bor
 #test-banner.ok { border: 2px solid #4caf50; }
 #test-banner.fail { border: 2px solid var(--danger); }
 
-.zip-option { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.zip-box { margin-top: 18px; padding: 14px 16px; border-radius: 14px; text-align: left;
+  border: 1px dashed rgba(255, 217, 138, .45); background: rgba(74, 58, 20, .25); }
+.zip-box p { margin: 6px 0 10px; font-size: 14px; line-height: 1.45; }
+.zip-box .file-btn { display: flex; justify-content: center; }
+.zip-title { margin: 0 0 4px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip-exp { display: inline-block; padding: 2px 8px; border-radius: 99px; background: #4a3a14; color: #ffd98a;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.zip-guide { color: #ffd98a; font-weight: 600; }
 .mode-badge { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--card-2); font-weight: 600; }
 .mode-badge.experimental { background: #4a3a14; color: #ffd98a; }
 

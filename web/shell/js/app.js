@@ -40,6 +40,8 @@
   function showPanel(name) {
     for (const p of document.querySelectorAll('#launcher .panel')) p.classList.add('hidden');
     $('panel-' + name).classList.remove('hidden');
+    // The optional ZIP mode sits in its own box under the disc picker.
+    if (name === 'disc') $('panel-zip').classList.remove('hidden');
   }
 
   let toastTimer = 0;

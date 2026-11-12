@@ -166,7 +166,39 @@ def quality_menu() -> tuple[str, dict]:
     return "custom", q
 
 
+def find_bin_candidates() -> list[Path]:
+    """.bin/.iso files next to the script, in the current folder and in
+    Downloads/Desktop/Documents, largest first (the game image is ~600 MB)."""
+    home = Path.home()
+    folders = [HERE, Path.cwd(), home / "Downloads", home / "Desktop", home / "Documents",
+               home / "Descargas", home / "Escritorio", home / "Documentos"]
+    seen, found = set(), []
+    for folder in folders:
+        try:
+            for p in folder.iterdir():
+                if p.suffix.lower() in (".bin", ".iso") and p.is_file() and p.stat().st_size > 20 * 1024 * 1024:
+                    rp = p.resolve()
+                    if rp not in seen:
+                        seen.add(rp)
+                        found.append(rp)
+        except OSError:
+            pass
+    return sorted(found, key=lambda p: -p.stat().st_size)[:9]
+
+
 def ask_bin_path() -> Path:
+    def is_game(p: Path) -> bool:
+        try:
+            return read_disc_serial(p) == EXPECTED_SERIAL
+        except Exception:
+            return False
+    candidates = [p for p in find_bin_candidates() if is_game(p)]
+    if candidates:
+        print("Encontré tu disco de Jackie Chan Stuntmaster:")
+        opts = [str(p) for p in candidates] + ["Otro archivo (arrastrarlo a esta ventana)"]
+        i = ask("Elige", opts, 0)
+        if i < len(candidates):
+            return candidates[i]
     print("Arrastra aquí tu imagen .bin de Jackie Chan Stuntmaster y pulsa Enter:")
     raw = read_line("> ")
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "'\"":
@@ -196,6 +228,38 @@ def run_ffmpeg(ffmpeg: str, args: list[str]) -> None:
         raise RuntimeError("ffmpeg: " + (lines[-1].strip() if lines else "failed"))
 
 
+def find_ffmpeg() -> str:
+    """ffmpeg next to the script (e.g. ffmpeg.exe copied into the folder), on
+    PATH, or in the usual Homebrew/MacPorts folders (a double-clicked .command
+    does not always get the full PATH)."""
+    exe = "ffmpeg.exe" if os.name == "nt" else "ffmpeg"
+    for cand in (HERE / exe, HERE / "ffmpeg" / "bin" / exe):
+        if cand.is_file():
+            return str(cand)
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    for cand in ("/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/local/bin/ffmpeg"):
+        if Path(cand).is_file():
+            return cand
+    return "ffmpeg"
+
+
+FFMPEG_HELP = """
+No encuentro ffmpeg, el programa que convierte el audio y el vídeo. Instálalo así:
+
+  Mac:      instala Homebrew (https://brew.sh) y luego, en Terminal:
+                brew install ffmpeg
+  Windows:  en PowerShell o Símbolo del sistema:
+                winget install Gyan.FFmpeg
+            o descarga "ffmpeg-release-essentials.zip" de https://www.gyan.dev/ffmpeg/builds/
+            y copia bin\\ffmpeg.exe a la carpeta de este programa.
+  Linux:    sudo apt install ffmpeg
+
+Después vuelve a ejecutar el conversor.
+"""
+
+
 def check_ffmpeg(ffmpeg: str) -> None:
     try:
         enc = subprocess.run([ffmpeg, "-hide_banner", "-encoders"], stdin=subprocess.DEVNULL,
@@ -203,11 +267,12 @@ def check_ffmpeg(ffmpeg: str) -> None:
         dem = subprocess.run([ffmpeg, "-hide_banner", "-demuxers"], stdin=subprocess.DEVNULL,
                              capture_output=True, text=True).stdout
     except FileNotFoundError:
-        sys.exit(f"Error: ffmpeg not found ({ffmpeg}). Install it or pass --ffmpeg PATH.")
+        sys.exit(FFMPEG_HELP)
     missing = [n for n, ok in (("libx264", "libx264" in enc), ("aac", " aac " in enc),
                                 ("psxstr demuxer", "psxstr" in dem)) if not ok]
     if missing:
-        sys.exit("Error: this ffmpeg lacks: " + ", ".join(missing))
+        sys.exit("Error: tu ffmpeg no incluye: " + ", ".join(missing) +
+                 ". Instala una versión completa (ver instrucciones abajo)." + FFMPEG_HELP)
 
 
 def read_disc_serial(bin_path: Path) -> str | None:
@@ -279,6 +344,17 @@ def job_movie(ffmpeg: str, q: dict, str_path: str, out_mp4: str) -> str:
 
 # ------------------------------------------------------------------- main
 
+def reveal(path: Path) -> None:
+    """Show the finished ZIP in Finder / Explorer (best effort)."""
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", "-R", str(path)], check=False)
+        elif os.name == "nt":
+            subprocess.run(["explorer", "/select,", str(path)], check=False)
+    except OSError:
+        pass
+
+
 def print_breakdown(zip_path: Path) -> None:
     """Show what takes the space inside the pack (compressed sizes)."""
     groups: dict[str, int] = {}
@@ -307,7 +383,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Build a ReChan media pack ZIP from your own disc image.")
     ap.add_argument("bin", type=Path, nargs="?", help="your Jackie Chan Stuntmaster (NTSC-U) .bin image (asked if omitted)")
     ap.add_argument("-o", "--output", type=Path, help="output ZIP (default: rechan-pack-<quality>.zip)")
-    ap.add_argument("--ffmpeg", default=shutil.which("ffmpeg") or "ffmpeg", help="path to ffmpeg")
+    ap.add_argument("--ffmpeg", default=find_ffmpeg(), help="path to ffmpeg")
     ap.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) - 1), help="parallel workers")
     ap.add_argument("--no-music", action="store_true", help="keep the original music")
     ap.add_argument("--no-dialog", action="store_true", help="keep the original speech")
@@ -337,8 +413,8 @@ def main() -> int:
             if val:
                 q[key] = str(val)
                 quality = "custom" if quality == "normal" and not args.quality else quality
-    if args.output is None:
-        args.output = Path(f"rechan-pack-{quality}.zip")
+    if args.output is None:  # next to the disc image, where the user will look for it
+        args.output = args.bin.expanduser().resolve().parent / f"rechan-pack-{quality}.zip"
 
     t0 = time.time()
     bin_path = args.bin.resolve()
@@ -481,6 +557,11 @@ def main() -> int:
                 print("   -", f)
         print()
         print("This pack contains the game's content: keep it for yourself, do not share it.")
+        if interactive:
+            print()
+            print("¡Listo! Abre ReChan Web y pulsa «Cargar paquete ZIP» con este archivo:")
+            print(f"  {out_zip}")
+            reveal(out_zip)
         return 0
     finally:
         if args.keep_temp:

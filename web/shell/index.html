@@ -44,13 +44,17 @@
           <span data-i18n="chooseDisc"></span>
         </label>
         <p class="hint" data-i18n="privacy"></p>
-        <div class="zip-option">
-          <label class="btn file-btn">
-            <input id="zip-input" type="file" accept=".zip,application/zip">
-            <span data-i18n="chooseZip"></span>
-          </label>
-          <p class="hint" data-i18n="zipHelp"></p>
-        </div>
+      </section>
+
+      <!-- Experimental mode: a separate box, so nobody thinks a ZIP is required. -->
+      <section id="panel-zip" class="panel zip-box hidden">
+        <h2 class="zip-title"><span class="chip-exp" data-i18n="expChip"></span> <span data-i18n="zipTitle"></span></h2>
+        <p data-i18n="zipIntro"></p>
+        <p><a class="zip-guide" href="https://github.com/gabom88/ReChan/blob/main/GUIA-PAQUETE-ZIP.md" target="_blank" rel="noopener" data-i18n="zipGuide"></a></p>
+        <label class="btn file-btn">
+          <input id="zip-input" type="file" accept=".zip,application/zip">
+          <span data-i18n="chooseZip"></span>
+        </label>
       </section>
 
       <section id="panel-extract" class="panel hidden">
@@ -78,7 +82,7 @@
       <p class="hint version-line"><span class="version-text"></span> · <button class="linkbtn version-check" data-i18n="checkUpdates"></button></p>
       <footer>
         <span data-i18n="credits"></span>
-        <a href="https://github.com/SilverwireGames/ReChan" target="_blank" rel="noopener">SilverwireGames/ReChan</a>
+        <a href="https://github.com/SilverwireGames/ReChan" target="_blank" rel="noopener">SilverwireGames</a>
       </footer>
     </div>
   </main>

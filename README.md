@@ -35,7 +35,7 @@ Es el **mismo código C++ de ReChan** compilado a WebAssembly con Emscripten. **
 ### Dos modos: BIN (estable) y ZIP (experimental)
 
 - **Modo BIN · estable:** cargas el `.bin` o `.iso` y el juego usa el audio y el vídeo originales de PlayStation. Es el modo de siempre.
-- **Modo ZIP · experimental:** cargas un ZIP preparado en tu PC con [`tools/media_pack`](tools/media_pack/README.md). La música y las voces van en AAC y los vídeos en H.264 (MP4), que el navegador decodifica por hardware. El ZIP ocupa mucho menos que el BIN. Lo generas en tu PC así:
+- **Modo ZIP · experimental:** cargas un ZIP preparado en tu PC. **Guía paso a paso: [GUIA-PAQUETE-ZIP.md](GUIA-PAQUETE-ZIP.md)**. El conversor se descarga de [rechan-conversor.zip](https://gabom88.github.io/ReChan/rechan-conversor.zip) y funciona con doble clic en Mac y Windows. Detalles técnicos en [`tools/media_pack`](tools/media_pack/README.md). La música y las voces van en AAC y los vídeos en H.264 (MP4), que el navegador decodifica por hardware. El ZIP ocupa mucho menos que el BIN. Lo generas en tu PC así:
 
   ```bash
   python3 tools/media_pack/make_rechan_pack.py "Jackie Chan Stuntmaster (USA).bin"

@@ -1,5 +1,7 @@
 # Paquete ZIP de ReChan (modo experimental)
 
+> ¿Solo quieres crear tu paquete? Sigue la **[guía sencilla](../../GUIA-PAQUETE-ZIP.md)**. Esta página es la referencia técnica.
+
 `make_rechan_pack.py` convierte **tu propia** imagen del disco de *Jackie Chan Stuntmaster* (NTSC-U, SLUS-00684) en un ZIP listo para ReChan Web. El ZIP trae los mismos assets que se extraen del BIN, pero con el audio y el vídeo en formatos modernos:
 
 | Contenido | Original (PSX) | En el ZIP |
@@ -20,7 +22,9 @@ En los archivos originales se ponen a cero los datos que ya se convirtieron. Se 
 
 ## Uso
 
-**Windows:** arrastra el `.bin` sobre `make_rechan_pack.bat`, o ejecuta:
+**Doble clic:** `make_rechan_pack.command` en Mac o `make_rechan_pack.bat` en Windows. Busca el `.bin` en la carpeta del conversor, en Descargas, en el Escritorio y en Documentos, encuentra ffmpeg (también un `ffmpeg.exe` copiado en la carpeta) y guarda el ZIP junto al `.bin`. `web/Makefile` publica todo esto como `rechan-conversor.zip` (lo genera `build_tool_zip.py`).
+
+**Windows:** también puedes arrastrar el `.bin` sobre `make_rechan_pack.bat`, o ejecutar:
 
 ```bat
 make_rechan_pack.bat "D:\Juegos\Jackie Chan Stuntmaster (USA).bin"

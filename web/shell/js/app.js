@@ -241,6 +241,7 @@
     { n: 17, name: () => t('touch.special') },
     { n: 18, name: () => t('touch.backKick') },
     { n: 19, name: () => t('touch.heavyKick') },
+    { n: 20, name: () => t('touch.rollKick') },
   ];
 
   function keyLabel(code) {

@@ -66,6 +66,7 @@ const RechanTouch = (() => {
     { id: 'ssp', bind: B.X, icon: 'punch', label: 'special',    badge: '★', direct: 17 },
     { id: 'sbk', bind: B.Y, icon: 'kick',  label: 'backKick',   badge: '↺', direct: 18 },
     { id: 'shk', bind: B.Y, icon: 'kick',  label: 'heavyKick',  badge: '!', direct: 19 },
+    { id: 'srk', bind: B.Y, icon: 'kick',  label: 'rollKick',   badge: '⟳', direct: 20 },
   ];
   for (const sp of SPECIALS) CONTROL_DEFS.push(Object.assign({ type: 'button', group: 'direct', num: sp.badge }, sp));
 
@@ -109,7 +110,7 @@ const RechanTouch = (() => {
     DEFAULT_LAYOUTS.portrait['p' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.585, size: 0.125, visible: true };
     DEFAULT_LAYOUTS.portrait['k' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.655, size: 0.125, visible: true };
   }
-  ['sbp', 'shp', 'ssp', 'sbk', 'shk'].forEach((id, i) => {
+  ['sbp', 'shp', 'ssp', 'sbk', 'shk', 'srk'].forEach((id, i) => {
     DEFAULT_LAYOUTS.landscape[id] = { x: 0.384 + i * 0.058, y: 0.24, size: 0.105, visible: true };
     DEFAULT_LAYOUTS.portrait[id] = { x: 0.22 + i * 0.14, y: 0.725, size: 0.125, visible: true };
   });

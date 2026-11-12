@@ -7105,8 +7105,12 @@ s32 Humanoid::ProcessFightingComboNode() {
     if (field488 == 0) {
         field488 = FindChildWithRequestedCommand(currentNode, static_cast<u32>(commandBits), frame);
         // A direct move replaces the continuation only where the combo could
-        // continue anyway (inside the current move's chain window).
-        if (field488 != 0) {
+        // continue anyway (inside the current move's chain window), and never
+        // the moves that only exist while holding an enemy (grab -> punch,
+        // kick or throw): those keep the game's own choice.
+        if (field488 != 0
+            && currentNode->requestedCommand != GA_GRAB
+            && currentNode->requestedCommand != GA_GRAB_FORWARD) {
             if (const u32 direct = TakeDirectMove(this)) {
                 field488 = direct;
             }
@@ -7258,8 +7262,14 @@ s32 Humanoid::EnterCombatCombo() {
     field488 = FindSiblingWithRequestedCommand(
         static_cast<const FightingComboNode*>(defaultFightingSystem),
         static_cast<u32>(commandBits));
-    if (const u32 direct = TakeDirectMove(this)) {
-        field488 = direct;
+    // Situational openers keep the game's choice: jump attack (bit 14 remap
+    // in _Jump), wall kick (bit 22, TestWallContextFightingRequestRemap) and
+    // the rising attack (bit 23).
+    constexpr u32 kSituationalBits = (1u << 14) | (1u << 22) | (1u << 23);
+    if ((static_cast<u32>(commandBits) & kSituationalBits) == 0) {
+        if (const u32 direct = TakeDirectMove(this)) {
+            field488 = direct;
+        }
     }
 
     if (field488 == 0) {

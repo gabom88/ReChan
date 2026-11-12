@@ -86,7 +86,7 @@ const RechanI18n = (() => {
       'touch.counter': 'Contra', 'touch.roll': 'Rodar', 'touch.status': 'Estado', 'touch.strafe': 'Lateral',
       'touch.select': 'Select', 'touch.start': 'Pausa',
       'touch.backPunch': 'Puñetazo de espalda', 'touch.heavyPunch': 'Puñetazo fuerte', 'touch.special': 'Golpe especial',
-      'touch.backKick': 'Patada de espalda', 'touch.heavyKick': 'Patada fuerte',
+      'touch.backKick': 'Patada de espalda', 'touch.heavyKick': 'Patada fuerte', 'touch.rollKick': 'Maroma + patada',
     },
     en: {
       subtitle: 'Jackie Chan Stuntmaster · web port by Bardock',
@@ -171,7 +171,7 @@ const RechanI18n = (() => {
       'touch.counter': 'Counter', 'touch.roll': 'Roll', 'touch.status': 'Status', 'touch.strafe': 'Strafe',
       'touch.select': 'Select', 'touch.start': 'Pause',
       'touch.backPunch': 'Back punch', 'touch.heavyPunch': 'Heavy punch', 'touch.special': 'Special move',
-      'touch.backKick': 'Back kick', 'touch.heavyKick': 'Heavy kick',
+      'touch.backKick': 'Back kick', 'touch.heavyKick': 'Heavy kick', 'touch.rollKick': 'Roll + kick',
     },
   };
 

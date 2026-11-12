@@ -55,14 +55,23 @@ const RechanInput = (() => {
   const DIRECT_DEFAULT_KEYS = {
     1: 'Digit1', 2: 'Digit2', 3: 'Digit3', 4: 'Digit4', 5: 'Digit5', 6: 'Digit6', 7: 'Digit7',
     8: 'KeyZ', 9: 'KeyX', 10: 'KeyV', 11: 'KeyB', 12: 'KeyN', 13: 'KeyM', 14: 'Comma',
-    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash',
+    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash', 20: 'Semicolon',
   };
+  // Moves that only exist inside another action are played as the real input
+  // sequence, so the game picks them exactly as with a pad. 20 = dive roll
+  // (R1) and, mid-roll, kick -> the roll kick of the dive-roll combo tree.
+  // Steps: [startMs, endMs, button]; each step is also held >= 3 frames.
+  const DIRECT_SEQUENCES = {
+    20: [[0, 90, 'RB'], [170, 280, 'Y']],
+  };
+  const DIRECT_ENGINE_MAX = 19; // moves the engine resolves itself (RcWebInput.directMove)
   let directKeys = {};
   try { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS, JSON.parse(localStorage.getItem(DIRECT_KEYS_STORAGE) || '{}')); }
   catch (_) { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS); }
-  let keyDirect = 0;          // move index of the direct key currently held (1-19)
+  let keyDirect = 0;          // move index of the direct key currently held (1-20)
   let keyDirectSince = 0;
   let pulseMove = 0, pulseSince = 0, pulseFrames = 0;
+  let seqRun = null;           // sequence move being played (DIRECT_SEQUENCES)
   let keyDirectCode = '';
   let captureCallback = null; // set while the options menu waits for a key
   function isPunchMove(n) { return (n >= 1 && n <= 7) || (n >= 15 && n <= 17); }
@@ -111,8 +120,19 @@ const RechanInput = (() => {
       since = keyDirectSince;
       connected = true;
     }
-    if (directMove !== pulseMove || since !== pulseSince) { pulseMove = directMove; pulseSince = since; pulseFrames = 0; }
-    if (directMove && (nowMs - since < DIRECT_PULSE_MS || pulseFrames < 3)) {
+    if (directMove !== pulseMove || since !== pulseSince) {
+      pulseMove = directMove; pulseSince = since; pulseFrames = 0;
+      // A sequence move starts on the press and then plays to the end even if
+      // the finger/key is already up (a quick tap is shorter than the sequence).
+      if (DIRECT_SEQUENCES[directMove]) seqRun = { seq: DIRECT_SEQUENCES[directMove], t0: nowMs, step: 0, frames: 0 };
+    }
+    if (seqRun) {
+      // Each step covers its time span and lasts at least 3 frames.
+      const r = seqRun, elapsed = nowMs - r.t0;
+      while (r.step < r.seq.length && elapsed >= r.seq[r.step][1] && r.frames >= 3) { r.step++; r.frames = 0; }
+      if (r.step >= r.seq.length) seqRun = null;
+      else if (elapsed >= r.seq[r.step][0]) { buttons |= 1 << BTN[r.seq[r.step][2]]; r.frames++; connected = true; }
+    } else if (directMove && !DIRECT_SEQUENCES[directMove] && (nowMs - since < DIRECT_PULSE_MS || pulseFrames < 3)) {
       buttons |= 1 << (isPunchMove(directMove) ? BTN.X : BTN.Y);
     }
     pulseFrames++;
@@ -148,7 +168,8 @@ const RechanInput = (() => {
     dv.setUint8(OFF.touchActive, touch.active ? 1 : 0);
     dv.setInt32(OFF.canvasW, canvasW, true);
     dv.setInt32(OFF.canvasH, canvasH, true);
-    dv.setInt32(OFF.directMove, directMove, true);
+    // Sequence moves go through the pad only; the engine never sees them.
+    dv.setInt32(OFF.directMove, directMove <= DIRECT_ENGINE_MAX ? directMove : 0, true);
   }
 
   function resizeCanvas() {

@@ -21,6 +21,10 @@ El paquete se crea **una vez en tu ordenador** a partir de tu propia copia del j
 | 🎞️ ffmpeg | Gratis; abajo se explica cómo instalarlo |
 | 📦 El conversor | [**Descargar rechan-conversor.zip**](https://gabom88.github.io/ReChan/rechan-conversor.zip) |
 
+> **¿Dónde está `rechan-conversor.zip`?** No está entre los archivos del repositorio: se genera automáticamente con cada versión y se descarga del enlace de arriba. También está en la pantalla de inicio de ReChan Web, dentro del recuadro **Experimental**.
+>
+> **Alternativa:** en la página del repositorio pulsa **Code → Download ZIP**, descomprímelo y abre la carpeta `tools/media_pack`. Ahí están los mismos lanzadores: `make_rechan_pack.command` en Mac y `make_rechan_pack.bat` en Windows. Funcionan igual.
+
 ---
 
 ## En Mac

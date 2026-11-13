@@ -51,12 +51,10 @@ const RechanInput = (() => {
   // Keyboard keys bound to direct attacks (☰ -> Options -> Attack keys).
   // A held key presses punch/kick on the virtual pad and tells the engine
   // which move to use, exactly like the direct-attack touch buttons.
-  const DIRECT_KEYS_STORAGE = 'rechan.directKeys.v1';
-  const DIRECT_DEFAULT_KEYS = {
-    1: 'Digit1', 2: 'Digit2', 3: 'Digit3', 4: 'Digit4', 5: 'Digit5', 6: 'Digit6', 7: 'Digit7',
-    8: 'KeyZ', 9: 'KeyX', 10: 'KeyV', 11: 'KeyB', 12: 'KeyN', 13: 'KeyM', 14: 'Comma',
-    15: 'Digit8', 16: 'Digit9', 17: 'Digit0', 18: 'Period', 19: 'Slash', 20: 'Semicolon', 21: 'Quote',
-  };
+  // v2: no default keys. Only the game's own keys are bound out of the box;
+  // the player assigns the direct-attack keys they want.
+  const DIRECT_KEYS_STORAGE = 'rechan.directKeys.v2';
+  const DIRECT_DEFAULT_KEYS = {};
   // Moves that only exist inside another action are played as the real input
   // sequence, so the game picks them exactly as with a pad. 20 = dive roll
   // (R1) and, mid-roll, kick -> the roll kick of the dive-roll combo tree.
@@ -64,7 +62,7 @@ const RechanInput = (() => {
   const DIRECT_SEQUENCES = {
     20: [[0, 90, 'RB'], [170, 280, 'Y']],
   };
-  const DIRECT_ENGINE_MAX = 21; // moves the engine resolves itself (RcWebInput.directMove)
+  const DIRECT_ENGINE_MAX = 22; // moves the engine resolves itself (RcWebInput.directMove)
   let directKeys = {};
   try { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS, JSON.parse(localStorage.getItem(DIRECT_KEYS_STORAGE) || '{}')); }
   catch (_) { directKeys = Object.assign({}, DIRECT_DEFAULT_KEYS); }

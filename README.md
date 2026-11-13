@@ -104,7 +104,7 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
   - patada contra la pared;
   - ataque al levantarte del suelo;
   - contraataques.
-- **Con teclado:** en **☰ → Opciones → Teclas de golpes** puedes asignar una tecla a cada uno de los 21 golpes. Por defecto: puñetazos `1`–`7`, patadas `Z X V B N M ,` y especiales `8 9 0 . / ; '`.
+- **Con teclado:** en **☰ → Opciones → Teclas de golpes** puedes asignar una tecla a cada golpe. Por defecto no hay ninguna asignada; solo funcionan las teclas propias del juego.
 
 ### Gráficos, mods y más
 

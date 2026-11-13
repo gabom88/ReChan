@@ -209,6 +209,7 @@
     $('opt-delete').classList.toggle('hidden', playing);
     const canMap = playing && window.Module && Module._rcweb_can_exit_to_map && Module._rcweb_can_exit_to_map();
     $('opt-map').classList.toggle('hidden', !canMap);
+    renderLevelSelect();
     refreshStorageInfo();
     renderAttackKeys();
     $('settings').classList.remove('hidden');
@@ -232,6 +233,55 @@
     }
   }
 
+  // --- level select (☰ -> Options -> Go to level) ---
+  // Every entry of the game's level list, including the destination-select
+  // map and each boss stage, with all their zones (petals).
+  const LEVEL_NAMES = {
+    es: { chinatown: 'Chinatown', waterfront: 'Puerto', sewer: 'Alcantarillas', roof: 'Azoteas', factory: 'Fábrica',
+          temple: 'Templo Shaolin', destselect: 'Mapa de destinos' },
+    en: { chinatown: 'Chinatown', waterfront: 'Waterfront', sewer: 'Sewer', roof: 'Rooftops', factory: 'Factory',
+          temple: 'Shaolin Temple', destselect: 'Destination map' },
+  };
+  function levelList() {
+    if (!window.Module || !Module._rcweb_level_list) return [];
+    const ptr = Module._rcweb_level_list();
+    if (!ptr) return [];
+    const text = Module.UTF8ToString(ptr);
+    Module._free(ptr);
+    return text.split('\n').filter(Boolean).map((line) => {
+      const [index, id, name, petals] = line.split('\t');
+      return {
+        index: +index, id: +id, name: (name || '').trim(),
+        petals: (petals || '').split(',').filter(Boolean).map((p) => { const [pi, pn] = p.split(':'); return { index: +pi, name: (pn || '').trim() }; }),
+      };
+    });
+  }
+  function levelLabel(lv, petal) {
+    const names = LEVEL_NAMES[RechanI18n.lang] || LEVEL_NAMES.en;
+    const base = names[lv.name.toLowerCase()] || lv.name;
+    const pn = (petal && petal.name) || '';
+    if (/^boss$/i.test(pn)) return `${base} · ${t('levelBoss')} (lev${String(lv.id).padStart(2, '0')})`;
+    if (/^\d+$/.test(pn)) return `${base} · ${t('levelZone')} ${pn} (lev${String(lv.id).padStart(2, '0')})`;
+    return `${base}${pn && pn !== 'A' ? ' · ' + pn : ''} (lev${String(lv.id).padStart(2, '0')})`;
+  }
+  function renderLevelSelect() {
+    const box = $('goto-level');
+    const can = playing && window.Module && Module._rcweb_can_goto_level && Module._rcweb_can_goto_level();
+    box.classList.toggle('hidden', !can);
+    if (!can) return;
+    const sel = $('goto-level-select');
+    sel.innerHTML = '';
+    for (const lv of levelList()) {
+      const petals = lv.petals.length ? lv.petals : [{ index: 0, name: '' }];
+      for (const p of petals) {
+        const o = document.createElement('option');
+        o.value = lv.index + ':' + p.index;
+        o.textContent = levelLabel(lv, p);
+        sel.appendChild(o);
+      }
+    }
+  }
+
   // --- direct-attack key bindings ---
   const DIRECT_MOVES = [
     ...[1, 2, 3, 4, 5, 6, 7].map((i) => ({ n: i, sec: i === 1 ? 'punches' : null, name: () => t('touch.punch') + ' ' + i })),
@@ -243,6 +293,7 @@
     { n: 19, name: () => t('touch.heavyKick') },
     { n: 20, name: () => t('touch.rollKick') },
     { n: 21, name: () => t('touch.rollKickOnly') },
+    { n: 22, name: () => t('touch.spinKick') },
   ];
 
   function keyLabel(code) {
@@ -492,6 +543,12 @@
       closeSettings();
     });
     $('test-start').addEventListener('click', startTestFromMenu);
+    $('goto-level-btn').addEventListener('click', () => {
+      const [lv, petal] = $('goto-level-select').value.split(':').map(Number);
+      if (!confirm(t('confirmGotoLevel'))) return;
+      Module._rcweb_request_goto_level(lv, petal);
+      closeSettings();
+    });
     // F8 copies diagnostics without leaving the game.
     window.addEventListener('keydown', (e) => {
       if (e.code === 'F8') { e.preventDefault(); copyDiagnostics(); }

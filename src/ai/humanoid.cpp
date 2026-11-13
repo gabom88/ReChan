@@ -939,41 +939,86 @@ static FightingComboNode* GetFallbackFightingRoot() {
 // code picks a move (EnterCombatCombo, or a combo continuation in
 // ProcessFightingComboNode) it uses that node instead. Targeting, damage,
 // dialogue, enemy reactions and later chaining all follow the normal path.
-// Only applies to Jackie's unarmed tree; requests expire after 20 ticks.
-static u32 s_directMoveNode = 0;
+// Unarmed: Jackie's punch tree (plus two nodes of the dive-roll/rising
+// trees). Armed: punch buttons 1-7 pick the weapon tree's own swings.
+// Requests expire after 20 ticks.
+static s32 s_directMoveIndex = -1;
 static u32 s_directMoveTick = 0;
 
 // First node of each distinct animation in the unarmed tree (see
 // autotest --dump-combos): index 0..6 = punches, 7..13 = kicks,
 // 14..18 = specials (back punch, heavy punch, special, back kick, heavy kick),
 // 19 = unused (web move 20 "roll + kick" is played as a real input sequence),
-// 20 = the dive-roll kick on its own (anim 25, from the dive-roll tree).
-static constexpr s32 kDirectMoveCount = 21;
+// 20 = the dive-roll kick on its own (anim 25, from the dive-roll tree),
+// 21 = the spinning kick Jackie does when getting up from the floor
+//      (rising attack, anim 100), on its own.
+static constexpr s32 kDirectMoveCount = 22;
 static constexpr u32 kDirectMoveNodes[kDirectMoveCount] = {
     0x800CEA84u, 0x800CEB10u, 0x800CEBC4u, 0x800CEC8Cu, 0x800CECF0u, 0x800CEC00u, 0x800CEAD4u, // anims 57 58 59 60 61 62 26
     0x800CEA98u, 0x800CEB60u, 0x800CECDCu, 0x800CEBECu, 0x800CECA0u, 0x800CEB9Cu, 0x800CEBB0u, // anims 53 54 55 56 44 42 48
     0x800CEAACu, 0x800CEB38u, 0x800CEAE8u, 0x800CEAFCu, 0x800CEB4Cu,                           // anims 64 23 63 65 67
-    0u, 0x800CEE44u,                                                                           // -, anim 25
+    0u, 0x800CEE44u, 0x800CEE30u,                                                              // -, anim 25, anim 100
 };
 
+// Weapon trees: the first node of each distinct weapon swing (punch-type
+// requests, anims not shared with the unarmed kicks), in tree order.
+// Cached per root; at most 7 (the punch buttons).
+struct WeaponDirectMoves { u32 root = 0; s32 count = 0; u32 nodes[7] = {}; };
+static WeaponDirectMoves s_weaponDirect[24];
+
+static void CollectWeaponMoves(const FightingComboNode* node, WeaponDirectMoves& out, s32 depth) {
+    for (s32 guard = 0; node && guard < 64 && out.count < 7; node = node->sibling, ++guard) {
+        const u8 cmd = node->requestedCommand;
+        if (node->moveData && (cmd == GA_PUNCH || cmd == GA_BACK_PUNCH || cmd == GA_HEAVY_PUNCH || cmd == GA_SPECIAL_GRAB)) {
+            const u16 anim = node->moveData->anim;
+            bool seen = false;
+            for (s32 i = 0; i < out.count && !seen; ++i) {
+                const FightingComboNode* n = ResolveFightingNodeAddressConst(out.nodes[i]);
+                seen = n && n->moveData && n->moveData->anim == anim;
+            }
+            if (!seen) out.nodes[out.count++] = node->psxAddress;
+        }
+        if (depth < 12) CollectWeaponMoves(node->child, out, depth + 1);
+    }
+}
+
+static u32 WeaponDirectNode(const FightingComboNode* root, s32 index) {
+    if (!root || index < 0 || index >= 7) return 0;
+    WeaponDirectMoves* slot = nullptr;
+    for (WeaponDirectMoves& w : s_weaponDirect) {
+        if (w.root == root->psxAddress) { slot = &w; break; }
+        if (!slot && w.root == 0) slot = &w;
+    }
+    if (!slot) return 0;
+    if (slot->root != root->psxAddress) {
+        *slot = WeaponDirectMoves{};
+        slot->root = root->psxAddress;
+        CollectWeaponMoves(root, *slot, 0);
+    }
+    return index < slot->count ? slot->nodes[index] : 0;
+}
+
 void RequestPlayerDirectMove(s32 index) {
-    if (index < 0 || index >= kDirectMoveCount || kDirectMoveNodes[index] == 0) return;
-    s_directMoveNode = kDirectMoveNodes[index];
+    if (index < 0 || index >= kDirectMoveCount) return;
+    s_directMoveIndex = index;
     s_directMoveTick = g_time ? g_time->GetFrameCounter() : 0u;
 }
 
 static u32 TakeDirectMove(const Humanoid* h) {
-    if (s_directMoveNode == 0 || h != static_cast<const Humanoid*>(Player::s_player)) return 0;
+    if (s_directMoveIndex < 0 || h != static_cast<const Humanoid*>(Player::s_player)) return 0;
     const u32 now = g_time ? g_time->GetFrameCounter() : 0u;
+    const s32 index = s_directMoveIndex;
     if (now - s_directMoveTick > 20u) {
-        s_directMoveNode = 0;
+        s_directMoveIndex = -1;
         return 0;
     }
     const FightingComboNode* root = static_cast<const FightingComboNode*>(h->defaultFightingSystem);
-    if (!root || root->psxAddress != kPlayerPunchRootAddress) return 0; // armed / other style
-    const u32 node = s_directMoveNode;
-    s_directMoveNode = 0;
-    return node;
+    if (!root) return 0;
+    s_directMoveIndex = -1;
+    if (root->psxAddress == kPlayerPunchRootAddress) return kDirectMoveNodes[index];
+    // Holding a weapon: punch buttons 1-7 choose its swings; everything else
+    // keeps the weapon tree's normal choice.
+    return WeaponDirectNode(root, index);
 }
 
 // Dev aid (autotest --dump-combos): prints the player's combo tree, one line

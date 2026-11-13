@@ -132,13 +132,84 @@ void RequestPlayerDirectMove(s32 index);
 void WebDiag_PollInput() {
     static int32_t s_lastDirect = 0;
     const int32_t direct = rcweb_input_state()->directMove;
-    if (direct != s_lastDirect && direct >= 1 && direct <= 21) {
+    if (direct != s_lastDirect && direct >= 1 && direct <= 22) {
         RequestPlayerDirectMove(direct - 1);
     }
     s_lastDirect = direct;
 }
 
+// ---------------------------------------------------------------------------
+// Level select (☰ -> Options -> Go to level). Lists every entry of
+// RTARGET/GAME_LN.TXT, including the ones the game never offers directly
+// (the destination-select map and each boss stage), with their petals.
+static s32 s_gotoLevel = -1;
+static s32 s_gotoPetal = 0;
+
+static bool CanGotoLevel() {
+    if (!g_game || !g_game->GetWorld()) return false;
+    const GameState st = g_game->GetState();
+    return st == GameState::Play || st == GameState::Menu;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int rcweb_can_goto_level() {
+    return CanGotoLevel() ? 1 : 0;
+}
+
+// "index<TAB>levelID<TAB>name<TAB>petalIndex:petalName,..." per line.
+// The caller frees the result.
+extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_level_list() {
+    std::string out;
+    World* world = (g_game ? g_game->GetWorld() : nullptr);
+    if (world) {
+        for (s32 i = 0; i < 64; ++i) {
+            const s32 id = world->GetLevelIDFromIndex((u32)i);
+            const char* name = world->GetLevelNameFromIndex((u32)i);
+            if (!name || id < 0) break;
+            char line[96];
+            std::snprintf(line, sizeof(line), "%d\t%d\t%s\t", i, id, name);
+            out += line;
+            const s32 petals = world->GetLevelPetalCountFromIndex((u32)i);
+            bool first = true;
+            for (s32 p = 0; p < 16 && petals > 0; ++p) {
+                const char* pn = world->GetPetalNameFromIndex((u32)i, (u32)p);
+                if (!pn) continue;
+                std::snprintf(line, sizeof(line), "%s%d:%s", first ? "" : ",", p, pn);
+                out += line;
+                first = false;
+            }
+            out += "\n";
+        }
+    }
+    char* result = static_cast<char*>(std::malloc(out.size() + 1));
+    if (result) std::memcpy(result, out.c_str(), out.size() + 1);
+    return result;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void rcweb_request_goto_level(int levelIndex, int petalIndex) {
+    s_gotoLevel = levelIndex;
+    s_gotoPetal = petalIndex;
+}
+
+static void ProcessGotoLevel() {
+    if (s_gotoLevel < 0) return;
+    const s32 level = s_gotoLevel, petal = s_gotoPetal;
+    s_gotoLevel = -1;
+    if (!CanGotoLevel()) return;
+    World* world = g_game->GetWorld();
+    if (!world->GetLevelNameFromIndex((u32)level)) return;
+    LOG_ALWAYS("[Web] Go to level %d petal %d requested from the page menu", level, petal);
+#if CUSTOM_MENU
+    if (g_feCustomMenuMgr && g_feCustomMenuMgr->IsActive()) {
+        g_feCustomMenuMgr->Deactivate();
+    }
+#endif
+    // Same hand-off the map uses when a destination is chosen.
+    world->SetTargetLevelPetal((u32)level, (u32)petal);
+    g_game->SetState(GameState::QueueLevelLoad);
+}
+
 void WebDiag_ProcessRequests() {
+    ProcessGotoLevel();
     if (!s_exitToMapRequested) return;
     s_exitToMapRequested = false;
     if (!CanExitToMap()) return;

@@ -68,6 +68,7 @@ const RechanTouch = (() => {
     { id: 'shk', bind: B.Y, icon: 'kick',  label: 'heavyKick',  badge: '!', direct: 19 },
     { id: 'srk', bind: B.Y, icon: 'kick',  label: 'rollKick',   badge: '⟳', direct: 20 },
     { id: 'sgk', bind: B.Y, icon: 'kick',  label: 'rollKickOnly', badge: '↯', direct: 21 },
+    { id: 'ssk', bind: B.Y, icon: 'kick',  label: 'spinKick',   badge: '◎', direct: 22 },
   ];
   for (const sp of SPECIALS) CONTROL_DEFS.push(Object.assign({ type: 'button', group: 'direct', num: sp.badge }, sp));
 
@@ -111,9 +112,10 @@ const RechanTouch = (() => {
     DEFAULT_LAYOUTS.portrait['p' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.585, size: 0.125, visible: true };
     DEFAULT_LAYOUTS.portrait['k' + (i + 1)] = { x: 0.08 + i * 0.14, y: 0.655, size: 0.125, visible: true };
   }
-  ['sbp', 'shp', 'ssp', 'sbk', 'shk', 'srk', 'sgk'].forEach((id, i) => {
+  ['sbp', 'shp', 'ssp', 'sbk', 'shk', 'srk', 'sgk', 'ssk'].forEach((id, i) => {
     DEFAULT_LAYOUTS.landscape[id] = { x: 0.384 + i * 0.058, y: 0.24, size: 0.105, visible: true };
-    DEFAULT_LAYOUTS.portrait[id] = { x: 0.08 + i * 0.14, y: 0.725, size: 0.125, visible: true };
+    // 8 specials: slightly narrower spacing than the 7 punch/kick columns.
+    DEFAULT_LAYOUTS.portrait[id] = { x: 0.065 + i * 0.124, y: 0.725, size: 0.115, visible: true };
   });
   // In direct mode the portrait d-pad and jump/grab move down to make room.
   const DIRECT_OVERRIDES = {

@@ -998,6 +998,29 @@ static u32 WeaponDirectNode(const FightingComboNode* root, s32 index) {
     return index < slot->count ? slot->nodes[index] : 0;
 }
 
+// Animations used by a fighting tree (for the random-weapon mod, which must
+// load a weapon's swings wherever it drops). Returns how many were written.
+s32 CollectFightingTreeAnims(u32 rootAddress, s32* out, s32 maxOut) {
+    s32 count = 0;
+    const FightingComboNode* stack[32];
+    s32 sp = 0;
+    if (const FightingComboNode* root = ResolveFightingNodeAddressConst(rootAddress)) stack[sp++] = root;
+    s32 guard = 0;
+    while (sp > 0 && guard++ < 256) {
+        const FightingComboNode* node = stack[--sp];
+        for (; node && guard++ < 256; node = node->sibling) {
+            if (node->moveData && count < maxOut) {
+                const s32 anim = node->moveData->anim;
+                bool seen = false;
+                for (s32 i = 0; i < count && !seen; ++i) seen = out[i] == anim;
+                if (!seen) out[count++] = anim;
+            }
+            if (node->child && sp < 32) stack[sp++] = node->child;
+        }
+    }
+    return count;
+}
+
 void RequestPlayerDirectMove(s32 index) {
     if (index < 0 || index >= kDirectMoveCount) return;
     s_directMoveIndex = index;

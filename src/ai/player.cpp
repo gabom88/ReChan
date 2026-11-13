@@ -357,6 +357,33 @@ void Player::Think() {
             SetActionState(AS_JUMP, 0);
         }
     }
+
+    // Mod "Random weapon (Select)": each Select press drops one from the sky.
+    // The game has no Select action, so the host reports the presses
+    // (web: pad Select/Back or the touch Select button, keyboard Q).
+    if (ModTakeSelectPress() && IsCheatEnabled(CheatOption::RandomWeapon)) {
+        ModDropRandomWeapon();
+    }
+
+    // Mod "No fall deaths": remember where Jackie last stood on solid ground,
+    // and bring him back there after a long fall (out of the level). Death
+    // volumes use the same position (see SwitchPlayerDeathVol in world.cpp).
+    if (IsCheatEnabled(CheatOption::NoFallDeath)) {
+        static s32 s_airFrames = 0;
+        if ((flags & TF_ON_GROUND) && actionState != AS_FALL && actionState != AS_HARDFALL) {
+            ModNoteSafeGround(pos);
+            s_airFrames = 0;
+        }
+        else if (actionState == AS_FALL || actionState == AS_HARDFALL) {
+            if (++s_airFrames > 150) {   // ~5 s falling: there is no floor below
+                ModReturnToSafeGround();
+                s_airFrames = 0;
+            }
+        }
+        else {
+            s_airFrames = 0;
+        }
+    }
 #endif
 
     // Match PSX Think__6Player: update runSpeed from movement before

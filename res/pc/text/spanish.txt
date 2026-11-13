@@ -616,6 +616,15 @@ Atravesar paredes:
 [FE_MD_CAM]
 Camara sigue a Jackie:
 
+[FE_MD_NFD]
+Sin muerte por caidas:
+
+[FE_MD_RWPN]
+Arma al azar (Select):
+
+[FE_MD_SHAO]
+Atuendo Shaolin:
+
 [FE_MAP]
 Volver al mapa
 

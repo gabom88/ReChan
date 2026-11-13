@@ -1018,6 +1018,32 @@ void Camera::FollowPath() {
     curPos.y += (s32)(((s64)normY * angleYInterp) >> 16);
     curPos.z += (s32)(((s64)normZ * angleYInterp) >> 16);
 
+#if NEW_CHEATS
+    // Mod "Camera follows Jackie" (2): when the closest rail nodes change, the
+    // eye's offset from the look-at point can jump to a new angle. Keep the
+    // camera glued to Jackie and turn it towards the new angle gradually
+    // (~1 s) instead of re-positioning it in one go.
+    if (IsCheatEnabled(CheatOption::CameraFollow) && target == static_cast<Thing*>(Player::s_player)) {
+        static LVector s_eyeOffset = {};
+        static bool s_haveOffset = false;
+        static const Camera* s_offsetCamera = nullptr;
+        const LVector railOffset = { curPos.x - prevTargetPos.x, curPos.y - prevTargetPos.y, curPos.z - prevTargetPos.z };
+        if (!s_haveOffset || lookAtMode || s_offsetCamera != this) {
+            s_eyeOffset = railOffset;
+            s_haveOffset = true;
+            s_offsetCamera = this;
+        }
+        else {
+            s_eyeOffset.x += (railOffset.x - s_eyeOffset.x) / 24;
+            s_eyeOffset.y += (railOffset.y - s_eyeOffset.y) / 24;
+            s_eyeOffset.z += (railOffset.z - s_eyeOffset.z) / 24;
+        }
+        curPos.x = prevTargetPos.x + s_eyeOffset.x;
+        curPos.y = prevTargetPos.y + s_eyeOffset.y;
+        curPos.z = prevTargetPos.z + s_eyeOffset.z;
+    }
+#endif
+
     // PSX: if lookAtMode is set, snap camera and compute angles
     if (lookAtMode) {
         // Copy prevTargetPos to targetPos (look-at target for LookAtTarget)

@@ -356,6 +356,8 @@ bool AutoTest_Step(GameState state) {
             { "godmode", CheatOption::GodMode }, { "onepunch", CheatOption::OnePunchMan },
             { "heavenbound", CheatOption::HeavenBound }, { "infinitejump", CheatOption::InfiniteJump },
             { "noclip", CheatOption::NoClipWalls }, { "camfollow", CheatOption::CameraFollow },
+            { "nofalldeath", CheatOption::NoFallDeath }, { "randomweapon", CheatOption::RandomWeapon },
+            { "shaolin", CheatOption::ShaolinOutfit },
         };
         for (const std::string& want : s_cheats) {
             for (const auto& c : kNames) {

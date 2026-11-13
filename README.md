@@ -94,10 +94,12 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
 |---|---|
 | Puñetazos | 1 – 7 |
 | Patadas | 1 – 7 |
-| Especiales (dorados) | puñetazo de espalda ↺ · puñetazo fuerte ! · golpe especial ★ · patada de espalda ↺ · patada fuerte ! · **maroma + patada ⟳** · **patada de maroma ↯** |
+| Especiales (dorados) | puñetazo de espalda ↺ · puñetazo fuerte ! · golpe especial ★ · patada de espalda ↺ · patada fuerte ! · **maroma + patada ⟳** · **patada de maroma ↯** · **patada giratoria ◎** |
 
 - **Maroma + patada (⟳)** hace la maroma y, a mitad, la patada, igual que si pulsaras R1 y enseguida patada.
 - **Patada de maroma (↯)** lanza solo esa patada baja, sin la maroma.
+- **Patada giratoria (◎)** es la patada en el suelo con la que Jackie se levanta cuando lo derriban, sin necesidad de caer antes.
+- **Con un arma en la mano**, los puñetazos 1–7 lanzan cada uno de los golpes propios de esa arma (cada arma tiene entre 3 y 7).
 - Los movimientos que dependen de la situación salen como en el original aunque uses botones directos:
   - golpes, patada y lanzamiento con un enemigo agarrado;
   - ataque en salto;
@@ -109,7 +111,13 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
 ### Gráficos, mods y más
 
 - **Gráficos** (Pausa → Opciones): resolución, **antialiasing** y **sombras dinámicas**, como en PC. En iPhone se recomiendan sombras «Baja» o «Media». En **☰ → Opciones** también puedes bajar la resolución de render si tu dispositivo va justo.
-- **Mods** (Pausa → Opciones → Mods): **saltos infinitos**, **atravesar paredes** y **cámara que sigue a Jackie**. Como los trucos, se desactivan al cargar una partida.
+- **Mods** (Pausa → Opciones → Mods). Como los trucos, se desactivan al cargar una partida:
+  - **Saltos infinitos** y **atravesar paredes**.
+  - **Cámara sigue a Jackie:** lo mantiene siempre centrado y, cuando el escenario cambia de ángulo, gira poco a poco en lugar de recolocarse de golpe.
+  - **Sin muerte por caídas:** si Jackie cae al vacío o sale de los límites del nivel, vuelve al último suelo firme en lugar de morir.
+  - **Arma al azar (Select):** cada vez que pulsas Select (botón Select del mando táctil, Back/Select del mando o `Q` en el teclado), cae del cielo un arma al azar entre las que tiene el nivel actual. Solo pueden ser armas del nivel, porque los modelos de cada arma están dentro de los datos de su nivel.
+  - **Atuendo Shaolin:** Jackie lleva siempre el traje alternativo (el de *Drunken Master* que el juego solo usa en el Templo o al conseguir los 20 dragones de oro).
+- **Ir a nivel:** **☰ → Opciones → Ir a nivel** carga cualquier nivel y zona del juego, incluidos los que no se pueden elegir directamente: el mapa de destinos (`lev07`) y cada jefe por separado (`lev08`, `lev11`–`lev14`). En el disco no hay niveles de prueba ocultos: los números `lev09` y `lev10` no existen.
 - **Volver al mapa:** **☰ → Opciones → Volver al mapa** sale del nivel y vuelve al mapa de selección de niveles.
 - **Actualizaciones:** cuando hay una versión nueva, la pantalla de inicio y el menú **☰** muestran «Nueva versión disponible» con el botón **Actualizar**, y el botón ☰ lleva un punto verde. Al pie de la pantalla de inicio ves tu versión y el enlace **Buscar actualizaciones**.
 - **¿Algo falla?** Pulsa **F8** o **☰ → Copiar diagnóstico** y pega el texto en un [issue](https://github.com/gabom88/ReChan/issues).

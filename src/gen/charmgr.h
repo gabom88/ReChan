@@ -125,6 +125,9 @@ public:
     void LoadAnimation(u32 type, s32 animEnum, u32 count, CharMgrCallback* callback = nullptr);
     void LoadAnimationBatch(u32 type, s32 animEnum, CharMgrCallback* callback = nullptr);
 
+    // Loads the whole animation group that contains animEnum (weapons keep
+    // their swings in one group, normally loaded by the level's switches).
+    bool LoadAnimationGroupContaining(u32 type, s32 animEnum);
     void UnloadAnimation(u32 type, u32 hash);
     void UnloadAnimation(u32 type, s32 animEnum, u32 count);
     void UnloadAnimationBatch(u32 type, s32 animEnum);

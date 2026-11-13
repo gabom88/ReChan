@@ -109,6 +109,9 @@ enum EntryBinding : u8 {
     EntryBinding_ModInfiniteJump,
     EntryBinding_ModNoClipWalls,
     EntryBinding_ModCameraFollow,
+    EntryBinding_ModNoFallDeath,
+    EntryBinding_ModRandomWeapon,
+    EntryBinding_ModShaolinOutfit,
 #endif
 };
 

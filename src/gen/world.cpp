@@ -4,6 +4,7 @@
 #include "ai/obstacle.h"
 #include "ai/player.h"
 #include "gen/world.h"
+#include "extra/cheats.h"
 #include "gen/ai.h"
 #include "gen/camera.h"
 #include "gen/backg.h"
@@ -1540,6 +1541,13 @@ static s32 SwitchPlayerDeathVol(Thing* thing, u32 argc, const char** argv) {
         }
         return SwitchEnemyObstacleDeathVol(thing, argc, argv);
     }
+
+#if NEW_CHEATS
+    // Mod "No fall deaths": back to the last safe ground instead of dying.
+    if (IsCheatEnabled(CheatOption::NoFallDeath) && ModReturnToSafeGround()) {
+        return 1;
+    }
+#endif
 
     if (g_blockManager) {
         g_blockManager->SetDeathVolumeFlag(0);

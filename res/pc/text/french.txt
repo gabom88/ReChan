@@ -616,6 +616,15 @@ Traverser les murs:
 [FE_MD_CAM]
 Camera suit Jackie:
 
+[FE_MD_NFD]
+Pas de mort par chute :
+
+[FE_MD_RWPN]
+Arme au hasard (Select) :
+
+[FE_MD_SHAO]
+Tenue Shaolin :
+
 [FE_MAP]
 Retour a la carte
 

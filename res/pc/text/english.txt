@@ -616,6 +616,15 @@ Walk through walls:
 [FE_MD_CAM]
 Camera follows Jackie:
 
+[FE_MD_NFD]
+No fall deaths:
+
+[FE_MD_RWPN]
+Random weapon (Select):
+
+[FE_MD_SHAO]
+Shaolin outfit:
+
 [FE_MAP]
 Back to map
 

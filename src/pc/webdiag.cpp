@@ -85,7 +85,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
             { CheatOption::HeavenBound, "HeavenBound" }, { CheatOption::BobbleHead, "BobbleHead" },
             { CheatOption::Stuntquake, "Stuntquake" }, { CheatOption::MirrorWorld, "MirrorWorld" },
             { CheatOption::InfiniteJump, "InfiniteJump" }, { CheatOption::NoClipWalls, "NoClipWalls" },
-            { CheatOption::CameraFollow, "CameraFollow" },
+            { CheatOption::CameraFollow, "CameraFollow" }, { CheatOption::NoFallDeath, "NoFallDeath" },
+            { CheatOption::RandomWeapon, "RandomWeapon" }, { CheatOption::ShaolinOutfit, "ShaolinOutfit" },
         };
         std::string on;
         for (const auto& c : kCheats) {
@@ -136,6 +137,13 @@ void WebDiag_PollInput() {
         RequestPlayerDirectMove(direct - 1);
     }
     s_lastDirect = direct;
+
+    // Select (pad Back / touch Select) or Q on the keyboard -> mod hook.
+    static bool s_lastSelect = false;
+    const RcWebInput* in = rcweb_input_state();
+    const bool select = ((in->padButtons >> 6) & 1u) != 0 || in->keys[81 /* KEY_Q */] != 0;
+    if (select && !s_lastSelect) ModNoteSelectPress();
+    s_lastSelect = select;
 }
 
 // ---------------------------------------------------------------------------

@@ -24,6 +24,8 @@
 #include "ai/obstacle.h"
 #include "ai/boss.h"
 #include "ai/player.h"
+#include "ai/pickup.h"
+#include "extra/cheats.h"
 #include "ai/humanoid.h"
 #include "ai/fevolume.h"
 #include "ai/hpole.h"
@@ -261,6 +263,9 @@ void AI::InternalOpen() {
 // PSX: InternalClose__2AI (AI.CPP:327, 0x8005438C)
 void AI::InternalClose() {
     MARKFUNCTION(0x8005438C);
+#if NEW_CHEATS
+    ModClearWeaponTemplates();
+#endif
     KillThings(0);
 }
 
@@ -592,6 +597,11 @@ Thing* AI::AddThingNoTagList(const char* name, u16 type,
     }
 
     targetList->AddNodeTail(thing);
+#if NEW_CHEATS
+    if (targetList == &pickupList && modelName) {
+        ModRememberWeaponTemplate(static_cast<Pickup*>(thing), modelName);
+    }
+#endif
     return thing;
 }
 

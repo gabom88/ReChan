@@ -1686,6 +1686,18 @@ void CharacterManager::LoadAnimationBatch(u32 type, s32 animEnum, CharMgrCallbac
     if (callback) callback->Callback();
 }
 
+bool CharacterManager::LoadAnimationGroupContaining(u32 type, s32 animEnum) {
+    if (animEnum < 0) return false;
+    for (const AnimGroupEntry& entry : kAnimGroupTable) {
+        if (entry.startEnum < 0) break;
+        if (animEnum >= entry.startEnum && animEnum < entry.startEnum + (s32)entry.count) {
+            LoadAnimation(type, entry.startEnum, entry.count, nullptr);
+            return true;
+        }
+    }
+    return false;
+}
+
 // PSX: UnloadAnimation (hash overload) (CHARMGR.CPP:1740, 0x8003A7E8)
 void CharacterManager::UnloadAnimation(u32 type, u32 hash) {
     MARKFUNCTION(0x8003A7E8);

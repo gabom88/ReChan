@@ -582,5 +582,9 @@ bool ScoreManager::IsDrunkenMasterSuitEnabled() {
         drunkenMasterUnlocked = 1;
     }
 
+#if NEW_CHEATS
+    // Mod "Shaolin outfit": always wear it.
+    if (IsCheatEnabled(CheatOption::ShaolinOutfit)) return true;
+#endif
     return enabled || drunkenMasterUnlocked != 0;
 }

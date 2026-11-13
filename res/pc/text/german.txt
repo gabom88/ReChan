@@ -616,6 +616,15 @@ Durch Waende gehen:
 [FE_MD_CAM]
 Kamera folgt Jackie:
 
+[FE_MD_NFD]
+Kein Tod durch Sturz:
+
+[FE_MD_RWPN]
+Zufallswaffe (Select):
+
+[FE_MD_SHAO]
+Shaolin-Kleidung:
+
 [FE_MAP]
 Zurueck zur Karte
 

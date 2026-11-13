@@ -616,6 +616,15 @@ Attraversa i muri:
 [FE_MD_CAM]
 Telecamera segue Jackie:
 
+[FE_MD_NFD]
+Nessuna morte da caduta:
+
+[FE_MD_RWPN]
+Arma casuale (Select):
+
+[FE_MD_SHAO]
+Abito Shaolin:
+
 [FE_MAP]
 Torna alla mappa
 

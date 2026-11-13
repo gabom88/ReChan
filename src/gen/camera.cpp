@@ -1,4 +1,5 @@
 #include "common.h"
+#include <cmath>
 #include "gen/camera.h"
 #include "gen/control.h"
 #include "gen/charmgr.h"
@@ -377,6 +378,9 @@ void Camera::Think() {
         if (modeFunc != nullptr && !skipModeFunc) {
             (this->*modeFunc)();
         }
+#if NEW_CHEATS
+        ApplyFollowCameraMod();
+#endif
 
         if (hasCollision != 0) {
             Move();
@@ -392,6 +396,66 @@ void Camera::Think() {
     }
 }
 
+
+#if NEW_CHEATS
+// Mod "Camera follows Jackie": a chase camera on top of whatever the level's
+// camera mode computed this frame. It always looks at Jackie and keeps a fixed
+// distance from him (the level's own distance where the mod was switched on or
+// the level started), so walking deep into the scene or towards the lens never
+// leaves him behind. Only the viewing direction comes from the level's camera,
+// and it turns gradually (~1 s) when the level's rail changes angle.
+void Camera::ApplyFollowCameraMod() {
+    static bool s_active = false;
+    static const Camera* s_owner = nullptr;
+    static f32 s_dir[3] = { 0.0f, 0.0f, 1.0f };
+    static f32 s_dist = 0.0f;
+    static u32 s_levelKey = 0xFFFFFFFFu;
+
+    if (!IsCheatEnabled(CheatOption::CameraFollow) || !targetThing
+        || targetThing != static_cast<Thing*>(Player::s_player)) {
+        s_active = false;
+        return;
+    }
+
+    LVector view = {};
+    targetThing->GetViewSpot(nullptr, &view);
+
+    // Direction the level's camera wants this frame (eye minus look-at goal).
+    const f32 ox = (f32)(curPos.x - prevTargetPos.x);
+    const f32 oy = (f32)(curPos.y - prevTargetPos.y);
+    const f32 oz = (f32)(curPos.z - prevTargetPos.z);
+    const f32 len = std::sqrt(ox * ox + oy * oy + oz * oz);
+
+    World* world = g_game ? g_game->GetWorld() : nullptr;
+    const u32 levelKey = world ? (((u32)world->GetCurLevelID() << 8) | world->GetCurrentPetalIndex()) : 0u;
+    const bool reset = !s_active || s_owner != this || levelKey != s_levelKey || lookAtMode;
+    if (reset) {
+        if (len > 1.0f) {
+            s_dir[0] = ox / len; s_dir[1] = oy / len; s_dir[2] = oz / len;
+            s_dist = len;
+        }
+        if (s_dist < 600.0f) s_dist = 1600.0f;   // no usable rail: a sensible default
+        if (s_dist > 6000.0f) s_dist = 6000.0f;
+        s_active = true;
+        s_owner = this;
+        s_levelKey = levelKey;
+    }
+    else if (len > 1.0f) {
+        const f32 k = 1.0f / 24.0f;
+        f32 nx = s_dir[0] + (ox / len - s_dir[0]) * k;
+        f32 ny = s_dir[1] + (oy / len - s_dir[1]) * k;
+        f32 nz = s_dir[2] + (oz / len - s_dir[2]) * k;
+        const f32 nl = std::sqrt(nx * nx + ny * ny + nz * nz);
+        if (nl > 0.0001f) { s_dir[0] = nx / nl; s_dir[1] = ny / nl; s_dir[2] = nz / nl; }
+    }
+
+    prevTargetPos = view;
+    curPos.x = view.x + (s32)(s_dir[0] * s_dist);
+    curPos.y = view.y + (s32)(s_dir[1] * s_dist);
+    curPos.z = view.z + (s32)(s_dir[2] * s_dist);
+    flags |= 0x02u;   // keep looking at the target
+}
+#endif
 
 // Camera::Move (0x80047FD4)
 // Interpolates position/target toward their goals using EvalCubic.
@@ -1018,31 +1082,6 @@ void Camera::FollowPath() {
     curPos.y += (s32)(((s64)normY * angleYInterp) >> 16);
     curPos.z += (s32)(((s64)normZ * angleYInterp) >> 16);
 
-#if NEW_CHEATS
-    // Mod "Camera follows Jackie" (2): when the closest rail nodes change, the
-    // eye's offset from the look-at point can jump to a new angle. Keep the
-    // camera glued to Jackie and turn it towards the new angle gradually
-    // (~1 s) instead of re-positioning it in one go.
-    if (IsCheatEnabled(CheatOption::CameraFollow) && target == static_cast<Thing*>(Player::s_player)) {
-        static LVector s_eyeOffset = {};
-        static bool s_haveOffset = false;
-        static const Camera* s_offsetCamera = nullptr;
-        const LVector railOffset = { curPos.x - prevTargetPos.x, curPos.y - prevTargetPos.y, curPos.z - prevTargetPos.z };
-        if (!s_haveOffset || lookAtMode || s_offsetCamera != this) {
-            s_eyeOffset = railOffset;
-            s_haveOffset = true;
-            s_offsetCamera = this;
-        }
-        else {
-            s_eyeOffset.x += (railOffset.x - s_eyeOffset.x) / 24;
-            s_eyeOffset.y += (railOffset.y - s_eyeOffset.y) / 24;
-            s_eyeOffset.z += (railOffset.z - s_eyeOffset.z) / 24;
-        }
-        curPos.x = prevTargetPos.x + s_eyeOffset.x;
-        curPos.y = prevTargetPos.y + s_eyeOffset.y;
-        curPos.z = prevTargetPos.z + s_eyeOffset.z;
-    }
-#endif
 
     // PSX: if lookAtMode is set, snap camera and compute angles
     if (lookAtMode) {

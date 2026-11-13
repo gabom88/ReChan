@@ -1,5 +1,6 @@
 #pragma once
 #include "core.h"
+#include "gen/config.h"
 #include "p3d/lvector.h"
 #include "gen/cammgr.h" // CameraAnchor
 #include "p3d/camera.h" // tCamera, tMatrixCamera, t2PointMatrixCamera, G_2ptcam
@@ -33,6 +34,9 @@ public:
 
     void Think();
     void Move();
+#if NEW_CHEATS
+    void ApplyFollowCameraMod();
+#endif
     void Update();
     void LookAtTarget(const LVector* target);
 

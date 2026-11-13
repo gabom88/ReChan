@@ -113,7 +113,7 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
 - **Gráficos** (Pausa → Opciones): resolución, **antialiasing** y **sombras dinámicas**, como en PC. En iPhone se recomiendan sombras «Baja» o «Media». En **☰ → Opciones** también puedes bajar la resolución de render si tu dispositivo va justo.
 - **Mods** (Pausa → Opciones → Mods). Como los trucos, se desactivan al cargar una partida:
   - **Saltos infinitos** y **atravesar paredes**.
-  - **Cámara sigue a Jackie:** lo mantiene siempre centrado y, cuando el escenario cambia de ángulo, gira poco a poco en lugar de recolocarse de golpe.
+  - **Cámara sigue a Jackie:** cámara de persecución que siempre mira a Jackie y se mantiene a la misma distancia aunque se aleje hacia el fondo o se acerque a la cámara. Del escenario solo toma el ángulo, y cuando este cambia gira poco a poco en lugar de recolocarse de golpe.
   - **Sin muerte por caídas:** si Jackie cae al vacío o sale de los límites del nivel, vuelve al último suelo firme en lugar de morir.
   - **Arma al azar (Select):** cada vez que pulsas Select (botón Select del mando táctil, Back/Select del mando o `Q` en el teclado), cae del cielo un arma al azar entre las que tiene el nivel actual. Solo pueden ser armas del nivel, porque los modelos de cada arma están dentro de los datos de su nivel.
   - **Atuendo Shaolin:** Jackie lleva siempre el traje alternativo (el de *Drunken Master* que el juego solo usa en el Templo o al conseguir los 20 dragones de oro).

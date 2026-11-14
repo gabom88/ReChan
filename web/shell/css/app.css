@@ -383,3 +383,8 @@ body.portrait-play #touch-editor {
 }
 @keyframes btn-shine { 0% { left: -60%; } 55%, 100% { left: 130%; } }
 @media (prefers-reduced-motion: reduce) { .btn.shine::after { animation: none; display: none; } }
+
+/* Hidden audio test (5 taps on the version line) */
+#audiotest { z-index: 60; }
+.audiotest-out { white-space: pre-wrap; word-break: break-word; font: 12px/1.4 ui-monospace, Menlo, monospace;
+  background: rgba(0, 0, 0, .35); border-radius: 10px; padding: 10px; max-height: 50vh; overflow: auto; text-align: left; }

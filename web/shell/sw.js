@@ -16,6 +16,7 @@ const SHELL = [
   'js/zippack.js',
   'js/media.js',
   'js/netpack.js',
+  'js/audiotest.js',
   'js/input.js',
   'js/dpad-gemuboy.js',
   'js/touch.js',

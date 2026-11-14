@@ -157,5 +157,6 @@ const RechanStore = (() => {
 
   return { open, load, getMeta, setMeta, putMany, clear, engineApi, totalBytes, getBlob,
            get fileCount() { return files.size; },
-           has: (k) => files.has(normalize(k)) };
+           has: (k) => files.has(normalize(k)),
+           keys: () => [...files.keys()] };
 })();

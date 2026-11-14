@@ -25,7 +25,10 @@ EM_ASYNC_JS(int16_t*, rcweb_media_decode, (const char* key, int preferredRate, i
     if (!decoded) return 0;
     const bytes = decoded.pcm.length * 2;
     const ptr = _malloc(bytes);
-    if (!ptr) return 0;
+    if (!ptr) {
+        if (Module.rcMedia.note) Module.rcMedia.note(UTF8ToString(key), 'ENGINE OUT OF MEMORY (' + bytes + ' bytes)');
+        return 0;
+    }
     HEAP16.set(decoded.pcm, ptr >> 1);
     HEAP32[outRate >> 2] = decoded.rate;
     HEAP32[outChannels >> 2] = decoded.channels;

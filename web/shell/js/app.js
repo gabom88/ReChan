@@ -462,7 +462,8 @@
       'screen: ' + innerWidth + 'x' + innerHeight + ' @' + devicePixelRatio,
       'pads: ' + (navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean).map((p) => p.id).join(' | ') : '-'),
       'touch: ' + RechanTouch.shown,
-      'media (ZIP): ' + (RechanMedia.active ? 'on' : 'off') + (RechanMedia.errors.length ? '\n  errors:\n  ' + RechanMedia.errors.join('\n  ') : ''),
+      'media (ZIP): ' + (RechanMedia.active ? 'on' : 'off') + (RechanMedia.errors.length ? '\n  errors:\n  ' + RechanMedia.errors.join('\n  ') : '')
+        + (RechanMedia.calls.length ? '\n  engine requests:\n  ' + RechanMedia.calls.join('\n  ') : ''),
       '',
       state,
       '--- last log lines ---',
@@ -719,6 +720,7 @@
 
     wireUpdates();
     $('net-btn').addEventListener('click', onNetDownload);
+    RechanAudioTest.wire();
     $('net-replace-btn').addEventListener('click', confirmNetReplace);
     $('opt-net-replace').addEventListener('click', confirmNetReplace);
     checkNetPack();

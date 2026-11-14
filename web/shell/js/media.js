@@ -6,7 +6,18 @@
 const RechanMedia = (() => {
   let active = false;
 
-  function has(key) { return !!RechanStore.getBlob('media/' + key); }
+  // What the engine asked for and what it got (audio test / diagnostics).
+  const calls = [];
+  function note(key, info) {
+    calls.push(new Date().toISOString().slice(11, 19) + ' ' + key + ' → ' + info);
+    if (calls.length > 40) calls.shift();
+  }
+
+  function has(key) {
+    const ok = !!RechanStore.getBlob('media/' + key);
+    if (!ok) note(key, 'not in the pack');
+    return ok;
+  }
 
   // Failures are kept for the diagnostics (F8): on a phone the console is
   // not visible, and a failed decode just means silence.
@@ -27,6 +38,18 @@ const RechanMedia = (() => {
   }
 
   let liveCtx = null;   // shared, only used if offline decoding fails
+  // One method only (audio test): 'offline:<rate>' or 'live'.
+  async function decodeMethod(data, method) {
+    if (method === 'live') {
+      const Live = window.AudioContext || window.webkitAudioContext;
+      if (!liveCtx && Live) liveCtx = new Live();
+      return decodeWith(liveCtx, data.slice(0));
+    }
+    const rate = +method.split(':')[1];
+    const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    return decodeWith(new Off(2, rate, rate), data.slice(0));
+  }
+
   async function decodeAnyWay(key, data, preferredRate) {
     const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     // 1) original rate (least memory)  2) 44.1 kHz (some Safari versions
@@ -46,13 +69,14 @@ const RechanMedia = (() => {
     return null;
   }
 
-  async function decodeAudio(key, preferredRate) {
+  async function decodeAudio(key, preferredRate, fromTest) {
     const blob = RechanStore.getBlob('media/' + key);
     if (!blob) return null;
     let data;
     try { data = await blob.arrayBuffer(); } catch (e) { noteError(key, 'read', e); return null; }
+    const t0 = performance.now();
     const buf = await decodeAnyWay(key, data, preferredRate);
-    if (!buf) return null;
+    if (!buf) { if (!fromTest) note(key, 'DECODE FAILED (see errors)'); return null; }
     const ch = Math.min(2, buf.numberOfChannels);
     const frames = buf.length;
     const pcm = new Int16Array(frames * ch);
@@ -63,6 +87,9 @@ const RechanMedia = (() => {
         pcm[o] = v >= 1 ? 32767 : v <= -1 ? -32768 : (v * 32767) | 0;
       }
     }
+    let peak = 0;
+    for (let i = 0; i < pcm.length; i += 97) { const a = pcm[i] < 0 ? -pcm[i] : pcm[i]; if (a > peak) peak = a; }
+    if (!fromTest) note(key, `ok ${frames} frames ${ch}ch @${buf.sampleRate} Hz, peak ${peak}${peak === 0 ? ' (SILENT!)' : ''}, ${Math.round(performance.now() - t0)} ms`);
     return { pcm, rate: buf.sampleRate, channels: ch, frames };
   }
 
@@ -138,5 +165,7 @@ const RechanMedia = (() => {
     setActive(on) { active = !!on; },
     has, decodeAudio, playMovie,
     get errors() { return errors.slice(); },
+    get calls() { return calls.slice(); },
+    note, decodeMethod,
   };
 })();

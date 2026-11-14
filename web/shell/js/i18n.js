@@ -10,7 +10,7 @@ const RechanI18n = (() => {
       chooseDisc: 'Elegir imagen del disco (.bin / .iso)',
       chooseZip: 'Cargar paquete ZIP',
       netTitle: 'Comenzar a jugar',
-      netInfo: 'Descarga el juego completo en tu navegador ({size}), es el metodo más comodo para jugar este port 😀',
+      netInfo: 'Descarga el juego completo en tu navegador ({size}), es el método más cómodo para jugar este port 😀',
       netDownload: 'Jugar ▶ / Play now!',
       netReplace: 'Descargar el juego del sitio', netUpdate: 'Actualizar los datos del juego',
       netReplaceConfirm: 'Se descargará el juego publicado en este sitio y sustituirá a los datos instalados ahora. Tus partidas guardadas y opciones se conservan. ¿Continuar?',

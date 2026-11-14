@@ -74,6 +74,7 @@ const RechanZipPack = (() => {
       (e.name.startsWith('assets/') || e.name.startsWith('media/')));
     const total = wanted.reduce((a, e) => a + e.size, 0);
     await RechanStore.clear();
+    const storedKeys = new Set();
     let done = 0;
     let batch = [];
     let batchBytes = 0;
@@ -81,6 +82,7 @@ const RechanZipPack = (() => {
       const key = e.name.startsWith('assets/') ? e.name.slice(7) : e.name;
       onProgress && onProgress({ done, total, current: key });
       batch.push({ key: key.toLowerCase(), data: await entryBlob(file, e) });
+      storedKeys.add(key.toLowerCase());
       batchBytes += e.size;
       done += e.size;
       if (batchBytes > 24 * 1024 * 1024 || batch.length >= 400) {
@@ -96,13 +98,15 @@ const RechanZipPack = (() => {
       if (!src || !(alias.startsWith('assets/') || alias.startsWith('media/'))) continue;
       const key = alias.startsWith('assets/') ? alias.slice(7) : alias;
       batch.push({ key: key.toLowerCase(), data: await entryBlob(file, src) });
+      storedKeys.add(key.toLowerCase());
       if (batch.length >= 400) { await RechanStore.putMany(batch); batch = []; }
     }
     if (batch.length) await RechanStore.putMany(batch);
     const meta = {
       serial: manifest.serial,
       source: 'zip',
-      files: wanted.length + aliases.length,
+      files: storedKeys.size,       // exactly what is in the store (checked at start-up)
+      complete: true,
       bytes: total,
       media: manifest.media || {},
       extractedAt: new Date().toISOString(),

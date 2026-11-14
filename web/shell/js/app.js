@@ -57,8 +57,14 @@
     toastTimer = setTimeout(() => el.classList.add('hidden'), ms || 3500);
   }
 
-  function showError(msg) {
+  // retry: optional { label, run } for the error panel's button (default:
+  // pick another disc image).
+  let errorRetry = null;
+  function showError(msg, retry) {
     $('error-text').textContent = msg;
+    errorRetry = retry || null;
+    $('error-retry').textContent = retry ? retry.label : t('retry');
+    $('error-other').classList.toggle('hidden', !retry);
     showPanel('error');
   }
 
@@ -108,9 +114,22 @@
     try {
       await RechanStore.load();
       const meta = await RechanStore.getMeta();
-      if (meta && RechanStore.fileCount > 0 && RechanStore.has('license.tim')) {
+      // A complete install has its manifest, every file it lists and the
+      // first file the game opens. Anything else is the leftover of an
+      // interrupted install (closed tab, lost connection, storage evicted):
+      // delete it so the game never starts on half the data.
+      const complete = meta && RechanStore.fileCount > 0 && RechanStore.has('license.tim')
+        && !(meta.files > 0 && RechanStore.fileCount < meta.files
+             && (meta.complete || meta.files - RechanStore.fileCount > 5)); // older installs: small tolerance
+      if (complete) {
         await showReady();
       } else {
+        if (meta || RechanStore.fileCount > 0) {
+          console.warn('[ReChan] incomplete install removed', meta, RechanStore.fileCount);
+          await RechanStore.clear().catch(() => {});
+          await RechanStore.load().catch(() => {});
+          toast(t('incompleteRemoved'), 6000);
+        }
         showPanel('disc');
       }
     } catch (e) {
@@ -184,8 +203,9 @@
       await showReady();
     } catch (e) {
       console.error(e);
-      if (e instanceof RechanZipPack.PackError) showError(t('zipErr_' + e.message));
-      else showError(t('netErr', { msg: String(e && e.message || e) }));
+      const retry = { label: t('netRetry'), run: onNetDownload };
+      if (e instanceof RechanZipPack.PackError) showError(t('zipErr_' + e.message), retry);
+      else showError(t('netErr', { msg: String(e && e.message || e) }), retry);
     }
   }
 
@@ -573,7 +593,11 @@
 
     $('disc-input').addEventListener('change', (e) => onDiscChosen(e.target.files && e.target.files[0]));
     $('zip-input').addEventListener('change', (e) => onZipChosen(e.target.files && e.target.files[0]));
-    $('error-retry').addEventListener('click', () => { showPanel('disc'); $('disc-input').click(); });
+    $('error-retry').addEventListener('click', () => {
+      if (errorRetry) { errorRetry.run(); return; }
+      showPanel('disc'); $('disc-input').click();
+    });
+    $('error-other').addEventListener('click', () => showPanel('disc'));
     $('play-btn').addEventListener('click', startEngine);
     $('touch-config-btn').addEventListener('click', openTouchEditor);
     $('settings-btn').addEventListener('click', openSettings);

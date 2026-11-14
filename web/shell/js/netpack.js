@@ -89,7 +89,14 @@ const RechanNetPack = (() => {
       for (let i = 0; i < pack.parts.length; i++) {
         const part = pack.parts[i];
         const old = have.get(part.name);
+        // Re-read and re-hash parts kept from an interrupted download: a part
+        // stored by a page that was killed can be unreadable or truncated
+        // (WebKit), and reusing it would make every import fail.
+        let keep = false;
         if (old && old.sha256 === part.sha256 && old.blob && old.blob.size === part.size) {
+          try { keep = await sha256Hex(await old.blob.arrayBuffer()) === part.sha256; } catch (_) { keep = false; }
+        }
+        if (keep) {
           blobs.push(old.blob);
           done += part.size;
           onProgress && onProgress({ phase: 'download', done, total, part: i + 1, parts: pack.parts.length });
@@ -119,9 +126,18 @@ const RechanNetPack = (() => {
       // Joined pack (disk-backed blobs) -> the ZIP importer.
       const file = new Blob(blobs, { type: 'application/zip' });
       if (file.size !== pack.size) throw new NetError('badPart');
-      const meta = await RechanZipPack.importPack(file, (p) => {
-        onProgress && onProgress({ phase: 'import', done: p.done, total: p.total, current: p.current });
-      });
+      let meta;
+      try {
+        meta = await RechanZipPack.importPack(file, (p) => {
+          onProgress && onProgress({ phase: 'import', done: p.done, total: p.total, current: p.current });
+        });
+      } catch (e) {
+        // A failed import leaves nothing usable: drop the half-written game
+        // data and the downloaded parts, so the next attempt starts clean.
+        await tx(db, 'readwrite', (s) => s.clear()).catch(() => {});
+        await RechanStore.clear().catch(() => {});
+        throw e;
+      }
       meta.source = 'zip';
       meta.downloaded = true;
       meta.netSha = pack.sha256;
@@ -134,5 +150,13 @@ const RechanNetPack = (() => {
     }
   }
 
-  return { info, downloadAndImport, NetError };
+  // Forget any downloaded parts (used when an install is found incomplete).
+  async function reset() {
+    try {
+      const db = await openDb();
+      try { await tx(db, 'readwrite', (s) => s.clear()); } finally { db.close(); }
+    } catch (_) { /* nothing stored */ }
+  }
+
+  return { info, downloadAndImport, reset, NetError };
 })();

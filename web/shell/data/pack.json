@@ -1,0 +1,52 @@
+{
+  "format": "rechan-pack-parts",
+  "version": 1,
+  "created": "2026-11-14T01:17:56Z",
+  "file": "rechan-pack-normal.zip",
+  "size": 145250835,
+  "sha256": "85345048dfdd03c4e76eac40625b0d5a969ca14e32550818b9fc2f304df6873e",
+  "serial": "SLUS-00684",
+  "packVersion": 2,
+  "parts": [
+    {
+      "name": "rechan-pack.part001",
+      "size": 19922944,
+      "sha256": "0042e62be39433d6be79d97f0aa149979e926d48824c91f916ff2e7798237fab"
+    },
+    {
+      "name": "rechan-pack.part002",
+      "size": 19922944,
+      "sha256": "f21c0383525924f17e2ea805bebef3d0104d0e2dc3cb4ec78cb85160a67ba677"
+    },
+    {
+      "name": "rechan-pack.part003",
+      "size": 19922944,
+      "sha256": "3e6deab311f656385454d743a534d60b0f457283ee6eeeb856480ffbc70ebdfb"
+    },
+    {
+      "name": "rechan-pack.part004",
+      "size": 19922944,
+      "sha256": "52df47d641d8e8d5a5bcb233e51cda1f7ceecc3a572ac5816f3284bacb297683"
+    },
+    {
+      "name": "rechan-pack.part005",
+      "size": 19922944,
+      "sha256": "99b9ea02ff4367b91670377a49a57278a673d6d301e12a59ec819f6df5de055f"
+    },
+    {
+      "name": "rechan-pack.part006",
+      "size": 19922944,
+      "sha256": "277108dcf2a84857a6d07f6377e259ee0cc91ff6df2c4feeff71743f632b585c"
+    },
+    {
+      "name": "rechan-pack.part007",
+      "size": 19922944,
+      "sha256": "abec401fcc06856d22b3c0d1ba9f22fb5417b382ea5faa2542ba02e64259c26e"
+    },
+    {
+      "name": "rechan-pack.part008",
+      "size": 5790227,
+      "sha256": "6ee7dfb2c6136e56eb904414089eb805dea222b7f9f006b10be1231396f87889"
+    }
+  ]
+}

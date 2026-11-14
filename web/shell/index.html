@@ -33,6 +33,16 @@
         <button class="btn primary small update-apply" data-i18n="updateNow"></button>
       </div>
 
+      <!-- Option 3: the pack published with the page (data/pack.json). Shown
+           only when the parts are there. -->
+      <section id="panel-net" class="panel zip-box net-box hidden">
+        <h2 class="zip-title"><span data-i18n="netTitle"></span></h2>
+        <p id="net-info"></p>
+        <button class="btn primary shine" id="net-btn" data-i18n="netDownload"></button>
+        <p class="hint" data-i18n="netLicense"></p>
+      </section>
+
+
       <section id="panel-loading" class="panel">
         <p class="status" data-i18n="checking"></p>
       </section>
@@ -64,14 +74,7 @@
         <p class="hint mono" id="extract-file"></p>
       </section>
 
-      <!-- Option 3: the pack published with the page (data/pack.json). Shown
-           only when the parts are there. -->
-      <section id="panel-net" class="panel zip-box net-box hidden">
-        <h2 class="zip-title"><span data-i18n="netTitle"></span></h2>
-        <p id="net-info"></p>
-        <button class="btn primary shine" id="net-btn" data-i18n="netDownload"></button>
-        <p class="hint" data-i18n="netLicense"></p>
-      </section>
+
 
       <section id="panel-error" class="panel hidden">
         <p class="error" id="error-text"></p>

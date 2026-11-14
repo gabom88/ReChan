@@ -81,6 +81,26 @@
       size: fmtBytes(RechanStore.totalBytes()),
     });
     showPanel('ready');
+    refreshNetReplace();
+  }
+
+  // With the game already installed, the published pack is offered from the
+  // ready panel and the options sheet (replacing the installed data; saves
+  // live elsewhere and are kept). Hidden when that exact pack is installed.
+  async function refreshNetReplace() {
+    const meta = await RechanStore.getMeta().catch(() => null);
+    const installed = !!(meta && netPack && meta.netSha === netPack.sha256);
+    const label = meta && meta.downloaded ? t('netUpdate') : t('netReplace');
+    for (const id of ['net-replace-btn', 'opt-net-replace']) {
+      const b = $(id);
+      b.textContent = label + (netPack ? ' · ' + fmtBytes(netPack.size) : '');
+      b.classList.toggle('hidden', !netPack || installed || (id === 'opt-net-replace' && playing));
+    }
+  }
+  function confirmNetReplace() {
+    if (!confirm(t('netReplaceConfirm'))) return;
+    closeSettings();
+    onNetDownload();
   }
 
   async function checkAssets() {
@@ -135,6 +155,7 @@
   let netPack = null;
   async function checkNetPack() {
     netPack = await RechanNetPack.info();
+    refreshNetReplace();
     if (!netPack) return;
     $('net-info').textContent = t('netInfo', { size: fmtBytes(netPack.size), parts: netPack.parts.length });
     if (!$('panel-disc').classList.contains('hidden')) $('panel-net').classList.remove('hidden');
@@ -252,6 +273,7 @@
     $('opt-map').classList.toggle('hidden', !canMap);
     renderLevelSelect();
     refreshStorageInfo();
+    refreshNetReplace();
     renderAttackKeys();
     $('settings').classList.remove('hidden');
   }
@@ -639,6 +661,8 @@
 
     wireUpdates();
     $('net-btn').addEventListener('click', onNetDownload);
+    $('net-replace-btn').addEventListener('click', confirmNetReplace);
+    $('opt-net-replace').addEventListener('click', confirmNetReplace);
     checkNetPack();
 
     // ?autoplay skips the launcher when assets are present (handy from the home-screen icon).

@@ -367,3 +367,4 @@ body.portrait-play #touch-editor {
   background: #3ddc84; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
 .net-box { border-style: solid; border-color: rgba(120, 200, 140, .45); background: rgba(23, 64, 42, .35); }
 .net-box .btn { width: 100%; }
+.net-replace { margin-top: 10px; border: 1px solid rgba(120, 200, 140, .5); }

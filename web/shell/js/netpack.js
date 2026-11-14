@@ -124,6 +124,7 @@ const RechanNetPack = (() => {
       });
       meta.source = 'zip';
       meta.downloaded = true;
+      meta.netSha = pack.sha256;
       await RechanStore.setMeta(meta);
       // Imported: the parts are no longer needed.
       await tx(db, 'readwrite', (s) => s.clear());

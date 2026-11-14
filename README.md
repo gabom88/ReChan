@@ -51,7 +51,7 @@ Abre **https://gabom88.github.io/ReChan/** en un navegador moderno (Safari 15+, 
 
 1. **Desde tu disco (`.bin`/`.iso`):** pulsa **Elegir imagen del disco** y selecciona tu imagen de *Jackie Chan Stuntmaster* **NTSC-U (SLUS-00684)**. Es el modo estable, con el audio y el vídeo originales.
 2. **Con un paquete ZIP creado por ti** (experimental): audio y vídeo mejorados. Ver [la guía](GUIA-PAQUETE-ZIP.md).
-3. **Descargar el juego:** si el sitio publica el paquete, pulsa **Jugar ▶**. Se descarga por partes, se comprueba cada una y se instala en el navegador. Si se corta la conexión, al reintentar continúa donde se quedó.
+3. **Descargar el juego:** si el sitio publica el paquete, pulsa **Jugar ▶ / Play now!**. Se descarga por partes, se comprueba cada una y se instala en el navegador. Si se corta la conexión, al reintentar continúa donde se quedó.
 
 Cuando termine, pulsa **Jugar**. Las siguientes veces el juego arranca directamente.
 

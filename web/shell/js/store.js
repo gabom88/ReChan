@@ -66,7 +66,10 @@ const RechanStore = (() => {
       cursorReq.onsuccess = () => {
         const cursor = cursorReq.result;
         if (!cursor) { resolve(); return; }
-        addToIndex(cursor.key, cursor.value);
+        // Small files are stored as raw bytes (see putMany); give the engine
+        // a Blob either way.
+        const v = cursor.value;
+        addToIndex(cursor.key, v instanceof Blob ? v : new Blob([v]));
         cursor.continue();
       };
       cursorReq.onerror = () => reject(cursorReq.error);
@@ -92,8 +95,15 @@ const RechanStore = (() => {
     const tx = db.transaction(FILES, 'readwrite');
     const store = tx.objectStore(FILES);
     for (const e of entries) {
-      const blob = e.data instanceof Blob ? e.data : new Blob([e.data]);
-      store.put(blob, e.key);
+      // Small files: raw bytes, kept inside the database record. Safari
+      // stores every Blob as its own file on disk, which makes thousands of
+      // small ones (speech clips) very slow to write. Big files: Blob.
+      if (!(e.data instanceof Blob) && e.data.byteLength <= 256 * 1024) {
+        const u8 = e.data instanceof Uint8Array ? e.data : new Uint8Array(e.data);
+        store.put(u8.byteOffset === 0 && u8.byteLength === u8.buffer.byteLength ? u8.buffer : u8.slice().buffer, e.key);
+      } else {
+        store.put(e.data instanceof Blob ? e.data : new Blob([e.data]), e.key);
+      }
     }
     await txDone(tx);
   }

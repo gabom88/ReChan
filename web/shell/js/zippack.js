@@ -46,10 +46,43 @@ const RechanZipPack = (() => {
     return entries;
   }
 
-  async function entryBlob(file, e) {
-    const lh = await bytes(file, e.localOffset, e.localOffset + 30);
+  // Reads the pack through a 4 MB window: thousands of small entries (speech
+  // clips) then cost a handful of reads instead of two each. Every read of a
+  // big Blob is slow on iPhone (it lives on disk, in IndexedDB).
+  const WINDOW = 4 * 1024 * 1024;
+  function windowReader(file) {
+    let wStart = 0, wData = null;
+    return async (start, end) => {
+      if (!wData || start < wStart || end > wStart + wData.length) {
+        wStart = start;
+        wData = await bytes(file, start, Math.min(file.size, Math.max(end, start + WINDOW)));
+      }
+      return wData.subarray(start - wStart, end - wStart);
+    };
+  }
+
+  // Small stored entries are returned as bytes (kept inside the database
+  // record); big ones as a Blob slice (no copy). Safari writes every Blob
+  // to its own file on disk, which is very slow for thousands of them.
+  const SMALL = 256 * 1024;
+
+  async function entryData(file, e, read) {
+    const lh = read ? await read(e.localOffset, e.localOffset + 30) : await bytes(file, e.localOffset, e.localOffset + 30);
     if (u32(lh, 0) !== 0x04034b50) throw new PackError('badZip');
     const start = e.localOffset + 30 + u16(lh, 26) + u16(lh, 28);
+    if (e.method === 0 && read && e.compSize <= SMALL) {
+      return (await read(start, start + e.compSize)).slice();
+    }
+    return entryBlob(file, e, start);
+  }
+
+  async function entryBlob(file, e, knownStart) {
+    let start = knownStart;
+    if (start === undefined) {
+      const lh = await bytes(file, e.localOffset, e.localOffset + 30);
+      if (u32(lh, 0) !== 0x04034b50) throw new PackError('badZip');
+      start = e.localOffset + 30 + u16(lh, 26) + u16(lh, 28);
+    }
     const raw = file.slice(start, start + e.compSize);
     if (e.method === 0) return raw;
     if (e.method !== 8) throw new PackError('badZip');
@@ -78,14 +111,16 @@ const RechanZipPack = (() => {
     let done = 0;
     let batch = [];
     let batchBytes = 0;
+    const read = windowReader(file);
+    wanted.sort((a, b) => a.localOffset - b.localOffset);   // sequential reads
     for (const e of wanted) {
       const key = e.name.startsWith('assets/') ? e.name.slice(7) : e.name;
       onProgress && onProgress({ done, total, current: key });
-      batch.push({ key: key.toLowerCase(), data: await entryBlob(file, e) });
+      batch.push({ key: key.toLowerCase(), data: await entryData(file, e, read) });
       storedKeys.add(key.toLowerCase());
       batchBytes += e.size;
       done += e.size;
-      if (batchBytes > 24 * 1024 * 1024 || batch.length >= 400) {
+      if (batchBytes > 24 * 1024 * 1024 || batch.length >= 1000) {
         await RechanStore.putMany(batch);
         batch = []; batchBytes = 0;
       }
@@ -97,9 +132,9 @@ const RechanZipPack = (() => {
       const src = byName.get(source);
       if (!src || !(alias.startsWith('assets/') || alias.startsWith('media/'))) continue;
       const key = alias.startsWith('assets/') ? alias.slice(7) : alias;
-      batch.push({ key: key.toLowerCase(), data: await entryBlob(file, src) });
+      batch.push({ key: key.toLowerCase(), data: await entryData(file, src, read) });
       storedKeys.add(key.toLowerCase());
-      if (batch.length >= 400) { await RechanStore.putMany(batch); batch = []; }
+      if (batch.length >= 1000) { await RechanStore.putMany(batch); batch = []; }
     }
     if (batch.length) await RechanStore.putMany(batch);
     const meta = {

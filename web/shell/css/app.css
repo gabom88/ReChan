@@ -368,3 +368,14 @@ body.portrait-play #touch-editor {
 .net-box { border-style: solid; border-color: rgba(120, 200, 140, .45); background: rgba(23, 64, 42, .35); }
 .net-box .btn { width: 100%; }
 .net-replace { margin-top: 10px; border: 1px solid rgba(120, 200, 140, .5); }
+
+/* Shine sweep on the "Play now!" (download) button */
+.btn.shine { position: relative; overflow: hidden; isolation: isolate; font-size: 1.1em; }
+.btn.shine::after {
+  content: ''; position: absolute; top: -50%; bottom: -50%; left: -60%; width: 40%;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, .75) 50%, transparent 100%);
+  transform: skewX(-20deg); pointer-events: none; z-index: 1;
+  animation: btn-shine 2.6s ease-in-out infinite;
+}
+@keyframes btn-shine { 0% { left: -60%; } 55%, 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .btn.shine::after { animation: none; display: none; } }

@@ -284,21 +284,35 @@ ActionInput::ActionInput() {
     bindings[ACTION_DIVE_ROLL] = { { KEY_LEFT_CONTROL, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::RB, GpBtn::NONE, GpAxis::NONE, 0 };
     bindings[ACTION_STRAFE] = { { KEY_LEFT_SHIFT, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::NONE, GpAxis::RTrigger, 0.5f };
     bindings[ACTION_COUNTER] = { { KEY_C, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::LB, GpBtn::NONE, GpAxis::NONE, 0 };
+#if defined(RC_PLATFORM_WEB)
+    // Web: Tab opens the menu (Esc would also leave the browser's full
+    // screen), so the status display moves to R.
+    bindings[ACTION_STATUS_DISPLAY] = { { KEY_R, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::NONE, GpAxis::LTrigger, 0.5f };
+#else
     bindings[ACTION_STATUS_DISPLAY] = { { KEY_TAB, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::NONE, GpAxis::LTrigger, 0.5f };
+#endif
 
     bindings[ACTION_MOVE_UP] = { { KEY_W, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::DpadUp, GpAxis::LeftY, -0.3f };
     bindings[ACTION_MOVE_DOWN] = { { KEY_S, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::DpadDown, GpAxis::LeftY, 0.3f };
     bindings[ACTION_MOVE_LEFT] = { { KEY_A, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::DpadLeft, GpAxis::LeftX, -0.3f };
     bindings[ACTION_MOVE_RIGHT] = { { KEY_D, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::NONE, GpBtn::DpadRight, GpAxis::LeftX, 0.3f };
 
+#if defined(RC_PLATFORM_WEB)
+    bindings[ACTION_OPEN_CLOSE_MENU] = { { KEY_TAB, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::Start, GpBtn::NONE, GpAxis::NONE, 0 };
+#else
     bindings[ACTION_OPEN_CLOSE_MENU] = { { KEY_ESCAPE, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::Start, GpBtn::NONE, GpAxis::NONE, 0 };
+#endif
 
     bindings[ACTION_MENU_UP] = { { KEY_UP, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::DpadUp, GpBtn::NONE, GpAxis::LeftY, -0.5f };
     bindings[ACTION_MENU_DOWN] = { { KEY_DOWN, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::DpadDown, GpBtn::NONE, GpAxis::LeftY, 0.5f };
     bindings[ACTION_MENU_LEFT] = { { KEY_LEFT, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::DpadLeft, GpBtn::NONE, GpAxis::LeftX, -0.5f };
     bindings[ACTION_MENU_RIGHT] = { { KEY_RIGHT, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::DpadRight, GpBtn::NONE, GpAxis::LeftX, 0.5f };
     bindings[ACTION_MENU_CONFIRM] = { { KEY_ENTER, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::A, GpBtn::NONE, GpAxis::NONE, 0 };
+#if defined(RC_PLATFORM_WEB)
+    bindings[ACTION_MENU_BACK] = { { KEY_TAB, KEY_BACKSPACE }, { MouseBtn::NONE, MouseBtn::NONE }, kDefaultMenuBackGamepadButton, GpBtn::NONE, GpAxis::NONE, 0 };
+#else
     bindings[ACTION_MENU_BACK] = { { KEY_ESCAPE, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, kDefaultMenuBackGamepadButton, GpBtn::NONE, GpAxis::NONE, 0 };
+#endif
     bindings[ACTION_MENU_CLEAR] = { { KEY_DELETE, 0 }, { MouseBtn::NONE, MouseBtn::NONE }, GpBtn::Y, GpBtn::NONE, GpAxis::NONE, 0 };
 }
 

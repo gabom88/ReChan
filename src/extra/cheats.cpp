@@ -32,6 +32,7 @@ static bool s_noClipWalls = false;
 static bool s_cameraFollow = false;
 static bool s_noFallDeath = false;
 static bool s_randomWeapon = false;
+static bool s_randomFurniture = false;
 static bool s_shaolinOutfit = false;
 static PetalStats s_dragonSnapshot[21] = {};
 static PetalStats s_levelSnapshot[21] = {};
@@ -54,6 +55,7 @@ static bool* GetCheatFlag(CheatOption option) {
         case CheatOption::CameraFollow: return &s_cameraFollow;
         case CheatOption::NoFallDeath: return &s_noFallDeath;
         case CheatOption::RandomWeapon: return &s_randomWeapon;
+        case CheatOption::RandomFurniture: return &s_randomFurniture;
         case CheatOption::ShaolinOutfit: return &s_shaolinOutfit;
     }
     return nullptr;
@@ -155,6 +157,7 @@ void ResetCheats() {
     SetCheatEnabled(CheatOption::CameraFollow, false);
     SetCheatEnabled(CheatOption::NoFallDeath, false);
     SetCheatEnabled(CheatOption::RandomWeapon, false);
+    SetCheatEnabled(CheatOption::RandomFurniture, false);
     SetCheatEnabled(CheatOption::ShaolinOutfit, false);
 }
 
@@ -325,24 +328,34 @@ bool ModTakeSelectPress() {
 bool ModDropRandomWeapon() {
     Player* player = Player::s_player;
     if (!g_ai || !player) return false;
-    const s32 kinds = s_weaponTemplateCount + s_furnitureTemplateCount;
+    // Two mods share Select: weapons and furniture. With both on, every
+    // press picks one of the available objects of either kind at random.
+    const s32 weapons = IsCheatEnabled(CheatOption::RandomWeapon) ? s_weaponTemplateCount : 0;
+    const s32 furniture = IsCheatEnabled(CheatOption::RandomFurniture) ? s_furnitureTemplateCount : 0;
+    const s32 kinds = weapons + furniture;
     if (kinds == 0) {
-        LOG_ALWAYS("[Mod] Random drop: this level has no weapons or furniture");
+        LOG_ALWAYS("[Mod] Random drop: nothing of the enabled kind in this zone");
         return false;
     }
     static u32 s_seed = 0x2545F491u;
     s_seed = s_seed * 1664525u + 1013904223u + (u32)(g_time ? g_time->GetFrameCounter() : 0u);
     const s32 pick = (s32)((s_seed >> 8) % (u32)kinds);
 
-    // A little in front of Jackie and well above his head; gravity does the rest.
     LVector pos = player->pos;
-    const s32 ahead = pick >= s_weaponTemplateCount ? 450 : 300;   // furniture is bigger
-    pos.x += (s32)(((s64)rmSin16(player->faceAngle) * ahead) >> 16);
-    pos.z += (s32)(((s64)rmSin16(player->faceAngle + 0x4000) * ahead) >> 16);
-    pos.y += 1400;
-    if (pick >= s_weaponTemplateCount) {
-        return DropFurniture(s_furnitureTemplates[pick - s_weaponTemplateCount], pos);
+    if (pick >= weapons) {
+        // Furniture lands well away from Jackie (it can crush him): 2-3 m in
+        // front, a little to a random side.
+        const s32 ahead = 1100 + (s32)((s_seed >> 20) % 500u);
+        const s32 side = (s32)((s_seed >> 12) % 801u) - 400;
+        pos.x += (s32)((((s64)rmSin16(player->faceAngle) * ahead) + ((s64)rmSin16(player->faceAngle + 0x4000) * side)) >> 16);
+        pos.z += (s32)((((s64)rmSin16(player->faceAngle + 0x4000) * ahead) - ((s64)rmSin16(player->faceAngle) * side)) >> 16);
+        pos.y += 1400;
+        return DropFurniture(s_furnitureTemplates[pick - weapons], pos);
     }
+    // Weapons: a little in front of Jackie and well above his head.
+    pos.x += (s32)(((s64)rmSin16(player->faceAngle) * 300) >> 16);
+    pos.z += (s32)(((s64)rmSin16(player->faceAngle + 0x4000) * 300) >> 16);
+    pos.y += 1400;
     const WeaponTemplate& t = s_weaponTemplates[pick];
     // The weapon's own animations (swings, idle) are loaded per zone by the
     // level; load their groups here so it can be used anywhere.

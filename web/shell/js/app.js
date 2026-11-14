@@ -335,6 +335,7 @@
     $('opt-lang').value = RechanI18n.lang;
     $('opt-delete').classList.toggle('hidden', playing);
     $('opt-wipe').classList.toggle('hidden', playing);
+    $('opt-reset').classList.toggle('hidden', !playing);
     const canMap = playing && window.Module && Module._rcweb_can_exit_to_map && Module._rcweb_can_exit_to_map();
     $('opt-map').classList.toggle('hidden', !canMap);
     renderLevelSelect();
@@ -530,18 +531,6 @@
     el.className = cls || '';
   }
 
-  function startTestFromMenu() {
-    const level = $('test-level').value;
-    const minutes = $('test-minutes').value;
-    const queue = level === 'all' ? [0, 1, 2, 3, 4, 5, 6] : [parseInt(level, 10)];
-    const url = new URL(location.href);
-    url.search = '';
-    url.searchParams.set('autotest', String(queue[0]));
-    url.searchParams.set('minutes', minutes);
-    if (queue.length > 1) url.searchParams.set('queue', queue.slice(1).join(','));
-    location.href = url.toString();
-  }
-
   function onAutotestDone(exitCode, stuck) {
     const summary = { level: testLevel, exitCode, stuck };
     let results = [];
@@ -682,7 +671,13 @@
       Module._rcweb_request_exit_to_map();
       closeSettings();
     });
-    $('test-start').addEventListener('click', startTestFromMenu);
+    $('opt-audiotest').addEventListener('click', () => { closeSettings(); RechanAudioTest.open(); });
+    // Reset: restart the engine straight to the title screen (like the
+    // console's reset button). Saves and options are kept.
+    $('opt-reset').addEventListener('click', () => {
+      if (!confirm(t('resetConfirm'))) return;
+      location.href = location.pathname + '?autoplay';
+    });
     $('goto-level-btn').addEventListener('click', () => {
       const [lv, petal] = $('goto-level-select').value.split(':').map(Number);
       if (!confirm(t('confirmGotoLevel'))) return;

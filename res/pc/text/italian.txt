@@ -620,7 +620,10 @@ Telecamera segue Jackie:
 Nessuna morte da caduta:
 
 [FE_MD_RWPN]
-Arma o mobile casuale (Select):
+Arma casuale (Select):
+
+[FE_MD_RFUR]
+Mobile casuale (Select):
 
 [FE_MD_SHAO]
 Abito Shaolin:

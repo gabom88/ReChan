@@ -134,7 +134,7 @@ const RechanMedia = (() => {
         resolve(true);
       };
       const onKey = (e) => {
-        if (skippable && ['Enter', 'Escape', 'Space', 'NumpadEnter'].includes(e.code)) {
+        if (skippable && ['Enter', 'Escape', 'Tab', 'Space', 'NumpadEnter'].includes(e.code)) {
           e.preventDefault(); e.stopImmediatePropagation(); finish();
         }
       };

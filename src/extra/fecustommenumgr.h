@@ -111,6 +111,7 @@ enum EntryBinding : u8 {
     EntryBinding_ModCameraFollow,
     EntryBinding_ModNoFallDeath,
     EntryBinding_ModRandomWeapon,
+    EntryBinding_ModRandomFurniture,
     EntryBinding_ModShaolinOutfit,
 #endif
 };

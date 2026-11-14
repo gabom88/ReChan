@@ -694,6 +694,7 @@ void feCustomMenuMgr::BuildPages() {
         Toggle("FE_MD_CAM", EntryBinding_ModCameraFollow),
         Toggle("FE_MD_NFD", EntryBinding_ModNoFallDeath),
         Toggle("FE_MD_RWPN", EntryBinding_ModRandomWeapon),
+        Toggle("FE_MD_RFUR", EntryBinding_ModRandomFurniture),
         Toggle("FE_MD_SHAO", EntryBinding_ModShaolinOutfit),
 #ifdef MOD_LOADER
         Button("FE_MD_LIST", EntryEvent_GoPage, MenuPage_Mods),
@@ -2922,6 +2923,7 @@ s32 feCustomMenuMgr::GetBoundValue(const Entry& e) const {
         case EntryBinding_ModCameraFollow: return IsCheatEnabled(CheatOption::CameraFollow) ? 1 : 0;
         case EntryBinding_ModNoFallDeath: return IsCheatEnabled(CheatOption::NoFallDeath) ? 1 : 0;
         case EntryBinding_ModRandomWeapon: return IsCheatEnabled(CheatOption::RandomWeapon) ? 1 : 0;
+        case EntryBinding_ModRandomFurniture: return IsCheatEnabled(CheatOption::RandomFurniture) ? 1 : 0;
         case EntryBinding_ModShaolinOutfit: return IsCheatEnabled(CheatOption::ShaolinOutfit) ? 1 : 0;
 #endif
         default: return 0;
@@ -3049,6 +3051,9 @@ void feCustomMenuMgr::ApplyValue(const Entry& e, s32 v) {
     }
     else if (e.binding == EntryBinding_ModRandomWeapon) {
         SetCheatEnabled(CheatOption::RandomWeapon, v != 0);
+    }
+    else if (e.binding == EntryBinding_ModRandomFurniture) {
+        SetCheatEnabled(CheatOption::RandomFurniture, v != 0);
     }
     else if (e.binding == EntryBinding_ModShaolinOutfit) {
         SetCheatEnabled(CheatOption::ShaolinOutfit, v != 0);

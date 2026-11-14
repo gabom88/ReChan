@@ -18,6 +18,7 @@ enum class CheatOption {
     CameraFollow,   // the rail camera keeps the player centred (no follow clamps)
     NoFallDeath,    // death volumes / endless falls put the player back on safe ground
     RandomWeapon,   // Select drops a random weapon of the current level from the sky
+    RandomFurniture, // Select drops a random table/chair of the current level (away from Jackie)
     ShaolinOutfit,  // Jackie always wears the alternate (Drunken Master) outfit
 };
 

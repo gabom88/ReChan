@@ -77,8 +77,8 @@ El modo con `.bin` sigue siendo el **estable**. La pantalla de inicio muestra el
 | Contraataque | C | L1 | 🛡 |
 | Rodar (maroma) | Ctrl izquierdo | R1 | ⟳ |
 | Desplazamiento lateral | Shift izquierdo | R2 | ↔ |
-| Estado | Tab | L2 | ♥ |
-| Menú | Esc | Start | ⏸ |
+| Estado | R | L2 | ♥ |
+| Menú | Tab (no Esc: en el navegador, Esc sale de la pantalla completa) | Start | ⏸ |
 
 El juego permite reasignar las teclas desde sus opciones. El botón **☰** abre las opciones de la versión web.
 
@@ -121,7 +121,7 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
   - **Saltos infinitos** y **atravesar paredes**.
   - **Cámara sigue a Jackie:** cámara de persecución que siempre mira a Jackie y se mantiene a la misma distancia aunque se aleje hacia el fondo o se acerque a la cámara. Del escenario solo toma el ángulo, y cuando este cambia gira poco a poco en lugar de recolocarse de golpe.
   - **Sin muerte por caídas:** si Jackie cae al vacío o sale de los límites del nivel, vuelve al último suelo firme en lugar de morir.
-  - **Arma o mueble al azar (Select):** cada vez que pulsas Select (botón Select del mando táctil, Back/Select del mando o `Q` en el teclado), cae del cielo un arma o un mueble al azar entre los que tiene la zona actual. Las mesas, las sillas y el carrito de las Azoteas se agarran estando pegado a ellos (botón de agarrar) y se lanzan contra los enemigos. Solo pueden ser objetos de la zona, porque sus modelos están dentro de los datos de cada nivel. Tienen muebles: Chinatown (zonas 2 y 3), Puerto (zona 3), Azoteas y Fábrica.
+  - **Arma al azar (Select)** y **Mueble al azar (Select):** cada vez que pulsas Select (botón Select del mando táctil, Back/Select del mando o `Q` en el teclado), cae del cielo un arma o un mueble al azar de la zona actual. Con los dos mods activos, cada pulsación elige al azar entre armas y muebles. Los muebles caen lejos de Jackie (podrían aplastarlo); las mesas, las sillas y el carrito de las Azoteas se agarran estando pegado a ellos (botón de agarrar) y se lanzan contra los enemigos. Solo pueden ser objetos de la zona, porque sus modelos están dentro de los datos de cada nivel. Tienen muebles: Chinatown (zonas 2 y 3), Puerto (zona 3), Azoteas y Fábrica.
   - **Atuendo Shaolin:** Jackie lleva siempre el traje alternativo (el de *Drunken Master* que el juego solo usa en el Templo o al conseguir los 20 dragones de oro).
 - **Ir a nivel:** **☰ → Opciones → Ir a nivel** carga cualquier nivel y zona del juego, incluidos los que no se pueden elegir directamente: el mapa de destinos (`lev07`) y cada jefe por separado (`lev08`, `lev11`–`lev14`). En el disco no hay niveles de prueba ocultos: los números `lev09` y `lev10` no existen.
 - **Volver al mapa:** **☰ → Opciones → Volver al mapa** sale del nivel y vuelve al mapa de selección de niveles.
@@ -222,7 +222,7 @@ Los cambios específicos de la web están protegidos con `RC_PLATFORM_WEB` / `__
 
 ### Modo de prueba
 
-En **☰ → Opciones → Modo de prueba** eliges un nivel (o todos) y la duración. El juego carga el nivel, pelea solo, recorre todos los enemigos y al final indica si algún personaje se quedó atascado.
+Solo por URL (ya no está en el menú): `?autotest=NIVEL&minutes=N` carga el nivel, pelea solo, recorre todos los enemigos y al final indica si algún personaje se quedó atascado. En **☰ → Opciones** quedan la **Prueba de sonido** (también con 5 toques en «Versión…») y **Reiniciar el juego**.
 
 - **Por URL:** `?autotest=NIVEL&minutes=N`. Con `fight=0` y `tour=0` se desactivan el combate y el recorrido.
 - **En el ejecutable:** `--autotest N --fight --tour 450`. Sirve para comparar la versión web con la nativa.

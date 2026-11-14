@@ -86,7 +86,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE char* rcweb_debug_dump() {
             { CheatOption::Stuntquake, "Stuntquake" }, { CheatOption::MirrorWorld, "MirrorWorld" },
             { CheatOption::InfiniteJump, "InfiniteJump" }, { CheatOption::NoClipWalls, "NoClipWalls" },
             { CheatOption::CameraFollow, "CameraFollow" }, { CheatOption::NoFallDeath, "NoFallDeath" },
-            { CheatOption::RandomWeapon, "RandomWeapon" }, { CheatOption::ShaolinOutfit, "ShaolinOutfit" },
+            { CheatOption::RandomWeapon, "RandomWeapon" }, { CheatOption::RandomFurniture, "RandomFurniture" }, { CheatOption::ShaolinOutfit, "ShaolinOutfit" },
         };
         std::string on;
         for (const auto& c : kCheats) {

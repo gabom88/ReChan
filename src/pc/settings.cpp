@@ -742,6 +742,18 @@ bool GameSettings::Load(const char* path) {
         kSettingDefs[i].SetValue(values[i]);
     }
 
+#if defined(RC_PLATFORM_WEB)
+    // Saved keybinds from before Tab became the menu key: a status display
+    // still on Tab moves to R, its new default.
+    if (g_actionInput) {
+        for (s32 slot = 0; slot < 2; slot++) {
+            if (g_actionInput->GetKeyBindingSlot(ACTION_STATUS_DISPLAY, slot) == KEY_TAB) {
+                g_actionInput->SetKeyBindingSlot(ACTION_STATUS_DISPLAY, slot, slot == 0 ? KEY_R : 0);
+            }
+        }
+    }
+#endif
+
     return loadedFromFile;
 }
 

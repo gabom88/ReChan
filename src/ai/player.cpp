@@ -361,7 +361,8 @@ void Player::Think() {
     // Mod "Random weapon (Select)": each Select press drops one from the sky.
     // The game has no Select action, so the host reports the presses
     // (web: pad Select/Back or the touch Select button, keyboard Q).
-    if (ModTakeSelectPress() && IsCheatEnabled(CheatOption::RandomWeapon)) {
+    if (ModTakeSelectPress()
+        && (IsCheatEnabled(CheatOption::RandomWeapon) || IsCheatEnabled(CheatOption::RandomFurniture))) {
         ModDropRandomWeapon();
     }
 

@@ -357,6 +357,7 @@ bool AutoTest_Step(GameState state) {
             { "heavenbound", CheatOption::HeavenBound }, { "infinitejump", CheatOption::InfiniteJump },
             { "noclip", CheatOption::NoClipWalls }, { "camfollow", CheatOption::CameraFollow },
             { "nofalldeath", CheatOption::NoFallDeath }, { "randomweapon", CheatOption::RandomWeapon },
+            { "randomfurniture", CheatOption::RandomFurniture },
             { "shaolin", CheatOption::ShaolinOutfit },
         };
         for (const std::string& want : s_cheats) {

@@ -620,7 +620,10 @@ Camera follows Jackie:
 No fall deaths:
 
 [FE_MD_RWPN]
-Random weapon or furniture (Select):
+Random weapon (Select):
+
+[FE_MD_RFUR]
+Random furniture (Select):
 
 [FE_MD_SHAO]
 Shaolin outfit:

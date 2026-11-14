@@ -73,6 +73,14 @@ const RechanZipPack = (() => {
     if (e.method === 0 && read && e.compSize <= SMALL) {
       return (await read(start, start + e.compSize)).slice();
     }
+    if (e.method === 0) {
+      // Copy the real bytes into a new Blob. Safari on iOS stores a *slice*
+      // of a disk-backed Blob (the downloaded pack is one, built from the
+      // parts kept in IndexedDB) with the right size but the wrong data, so
+      // music and movies came out corrupt there.
+      const bytesOf = new Uint8Array(await file.slice(start, start + e.compSize).arrayBuffer());
+      return new Blob([bytesOf]);
+    }
     return entryBlob(file, e, start);
   }
 
@@ -142,6 +150,7 @@ const RechanZipPack = (() => {
       source: 'zip',
       files: storedKeys.size,       // exactly what is in the store (checked at start-up)
       complete: true,
+      importVersion: 2,              // 2: media copied (not Blob slices), see entryData
       bytes: total,
       media: manifest.media || {},
       extractedAt: new Date().toISOString(),

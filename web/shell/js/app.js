@@ -109,6 +109,22 @@
     onNetDownload();
   }
 
+  // ZIP installs: music and movies must start like an MP4 ("ftyp" at byte 4).
+  // Installs made before importVersion 2 could hold corrupt copies on iPhone
+  // (Safari stored Blob slices with the wrong data).
+  async function mediaLooksValid(meta) {
+    if (!meta || meta.source !== 'zip') return true;
+    const keys = RechanStore.keys();
+    const sample = [keys.find((k) => k.startsWith('media/music/')), keys.find((k) => k.startsWith('media/movies/'))].filter(Boolean);
+    for (const k of sample) {
+      try {
+        const h = new Uint8Array(await RechanStore.getBlob(k).slice(4, 8).arrayBuffer());
+        if (String.fromCharCode(...h) !== 'ftyp') { console.warn('[ReChan] corrupt media in install:', k); return false; }
+      } catch (_) { return false; }
+    }
+    return true;
+  }
+
   async function checkAssets() {
     showPanel('loading');
     try {
@@ -118,7 +134,9 @@
       // first file the game opens. Anything else is the leftover of an
       // interrupted install (closed tab, lost connection, storage evicted):
       // delete it so the game never starts on half the data.
+      const mediaOk = await mediaLooksValid(meta);
       const complete = meta && RechanStore.fileCount > 0 && RechanStore.has('license.tim')
+        && mediaOk
         && !(meta.files > 0 && RechanStore.fileCount < meta.files
              && (meta.complete || meta.files - RechanStore.fileCount > 5)); // older installs: small tolerance
       if (complete) {
@@ -128,7 +146,7 @@
           console.warn('[ReChan] incomplete install removed', meta, RechanStore.fileCount);
           await RechanStore.clear().catch(() => {});
           await RechanStore.load().catch(() => {});
-          toast(t('incompleteRemoved'), 6000);
+          toast(t(mediaOk ? 'incompleteRemoved' : 'damagedRemoved'), 7000);
         }
         showPanel('disc');
       }

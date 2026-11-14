@@ -170,12 +170,35 @@
     }
   }
 
+  // --- clean slate ---
+  // Deletes everything this app stored in the browser except saves/options:
+  // installed game data, downloaded parts and the offline cache. Then reloads;
+  // with autoDownload the published pack starts downloading right away.
+  async function wipeAppStorage(autoDownload) {
+    showPanel('loading');
+    try { await RechanStore.clear(); } catch (_) {}
+    try {
+      await new Promise((resolve) => {
+        const r = indexedDB.deleteDatabase('rechan-assets');
+        r.onsuccess = r.onerror = r.onblocked = () => resolve();
+      });
+    } catch (_) {}
+    await RechanNetPack.deleteAll();
+    try { if (window.caches) for (const k of await caches.keys()) await caches.delete(k); } catch (_) {}
+    try { if (autoDownload) sessionStorage.setItem('rechan.autoDownload', '1'); } catch (_) {}
+    location.reload();
+  }
+
   // --- option 3: download the pack published with the page ---
   let netPack = null;
   async function checkNetPack() {
     netPack = await RechanNetPack.info();
     refreshNetReplace();
     if (!netPack) return;
+    // Coming back from "clear everything and download again".
+    let auto = false;
+    try { auto = sessionStorage.getItem('rechan.autoDownload') === '1'; sessionStorage.removeItem('rechan.autoDownload'); } catch (_) {}
+    if (auto) { onNetDownload(); return; }
     $('net-info').textContent = t('netInfo', { size: fmtBytes(netPack.size), parts: netPack.parts.length });
     if (!$('panel-disc').classList.contains('hidden')) $('panel-net').classList.remove('hidden');
   }
@@ -203,9 +226,13 @@
       await showReady();
     } catch (e) {
       console.error(e);
-      const retry = { label: t('netRetry'), run: onNetDownload };
+      // The primary button wipes everything the app stored (keeping saves and
+      // options), reloads and downloads again from scratch.
+      const retry = { label: t('netCleanRetry'), run: () => wipeAppStorage(true) };
+      const msg = String(e && e.message || e);
       if (e instanceof RechanZipPack.PackError) showError(t('zipErr_' + e.message), retry);
-      else showError(t('netErr', { msg: String(e && e.message || e) }), retry);
+      else if (msg === 'storageFull') showError(t('netErrStorage'), retry);
+      else showError(t('netErr', { msg }), retry);
     }
   }
 
@@ -289,6 +316,7 @@
     $('opt-scale').value = String(prefs.scale);
     $('opt-lang').value = RechanI18n.lang;
     $('opt-delete').classList.toggle('hidden', playing);
+    $('opt-wipe').classList.toggle('hidden', playing);
     const canMap = playing && window.Module && Module._rcweb_can_exit_to_map && Module._rcweb_can_exit_to_map();
     $('opt-map').classList.toggle('hidden', !canMap);
     renderLevelSelect();
@@ -598,6 +626,11 @@
       showPanel('disc'); $('disc-input').click();
     });
     $('error-other').addEventListener('click', () => showPanel('disc'));
+    $('opt-wipe').addEventListener('click', () => {
+      if (!confirm(t('wipeConfirm'))) return;
+      closeSettings();
+      wipeAppStorage(false);
+    });
     $('play-btn').addEventListener('click', startEngine);
     $('touch-config-btn').addEventListener('click', openTouchEditor);
     $('settings-btn').addEventListener('click', openSettings);

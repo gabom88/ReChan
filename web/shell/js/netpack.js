@@ -12,6 +12,17 @@ const RechanNetPack = (() => {
 
   class NetError extends Error {}
 
+  // Human-readable cause: the real error name/message, never a generic
+  // "network" (storage full, memory, a broken browser database... are not
+  // connection problems).
+  function describe(e, where) {
+    if (e instanceof NetError) return e.message;
+    const name = (e && e.name) || 'Error';
+    const msg = (e && e.message) || String(e);
+    if (name === 'QuotaExceededError' || /quota|space/i.test(msg)) return 'storageFull';
+    return (where ? where + ': ' : '') + name + (msg && msg !== name ? ' – ' + msg : '');
+  }
+
   async function info() {
     try {
       const res = await fetch(BASE + 'pack.json', { cache: 'no-store' });
@@ -78,7 +89,15 @@ const RechanNetPack = (() => {
   // onProgress({ phase: 'download'|'import', done, total, part, parts })
   async function downloadAndImport(pack, onProgress) {
     if (!crypto || !crypto.subtle) throw new NetError('noCrypto');
-    const db = await openDb();
+    // Parts + installed data need roughly twice the pack size.
+    if (navigator.storage && navigator.storage.estimate) {
+      try {
+        const est = await navigator.storage.estimate();
+        if (est.quota && est.quota - est.usage < pack.size * 2.1) throw new NetError('storageFull');
+      } catch (e) { if (e instanceof NetError) throw e; }
+    }
+    let db;
+    try { db = await openDb(); } catch (e) { throw new NetError(describe(e, 'IndexedDB')); }
     try {
       // Parts kept from an earlier, interrupted download (same SHA-256 only).
       const kept = await tx(db, 'readonly', (s) => req(s.getAll()).then((rows) => rows));
@@ -114,12 +133,16 @@ const RechanNetPack = (() => {
             buf = b;
           } catch (e) {
             done = before;
-            if (attempt === 3) throw e instanceof NetError ? e : new NetError('network');
+            if (attempt === 3) throw new NetError(describe(e, part.name));
             await new Promise((r) => setTimeout(r, 1500 * attempt));
           }
         }
         const blob = new Blob([buf]);
-        await tx(db, 'readwrite', (s) => s.put({ name: part.name, sha256: part.sha256, blob }, part.name));
+        try {
+          await tx(db, 'readwrite', (s) => s.put({ name: part.name, sha256: part.sha256, blob }, part.name));
+        } catch (e) {
+          throw new NetError(describe(e, 'IndexedDB'));
+        }
         blobs.push(blob);
       }
 
@@ -158,5 +181,15 @@ const RechanNetPack = (() => {
     } catch (_) { /* nothing stored */ }
   }
 
-  return { info, downloadAndImport, reset, NetError };
+  // Deletes the whole download database (also when it is broken and cannot
+  // even be opened).
+  function deleteAll() {
+    return new Promise((resolve) => {
+      let r;
+      try { r = indexedDB.deleteDatabase(DB_NAME); } catch (_) { resolve(); return; }
+      r.onsuccess = r.onerror = r.onblocked = () => resolve();
+    });
+  }
+
+  return { info, downloadAndImport, reset, deleteAll, NetError };
 })();

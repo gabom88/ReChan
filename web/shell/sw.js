@@ -34,7 +34,12 @@ const SHELL = [
 // taps Update, so a running game never mixes files from two builds. The very
 // first install has nothing to replace and activates at once.
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => {
+  // cache: 'reload' skips the browser's HTTP cache: GitHub Pages lets it keep
+  // files for 10 minutes, so a plain fetch could fill this build's cache with
+  // the previous build's files (and the page would keep saying "new version").
+  event.waitUntil(caches.open(CACHE)
+    .then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' }))))
+    .then(() => {
     if (!self.registration.active) return self.skipWaiting();
   }));
 });
@@ -69,7 +74,7 @@ self.addEventListener('fetch', (event) => {
       const cached = await cache.match('index.html');
       if (cached) return cached;
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(req.url, { cache: 'reload' });
         if (fresh.ok) cache.put('index.html', fresh.clone());
         return fresh;
       } catch (_) {
@@ -78,7 +83,7 @@ self.addEventListener('fetch', (event) => {
     }
     const hit = await cache.match(req, { ignoreSearch: true });
     if (hit) return hit;
-    const res = await fetch(req);
+    const res = await fetch(req, { cache: 'reload' });
     if (res.ok) cache.put(req, res.clone());
     return res;
   })());

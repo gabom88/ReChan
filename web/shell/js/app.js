@@ -462,6 +462,7 @@
       'screen: ' + innerWidth + 'x' + innerHeight + ' @' + devicePixelRatio,
       'pads: ' + (navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean).map((p) => p.id).join(' | ') : '-'),
       'touch: ' + RechanTouch.shown,
+      'media (ZIP): ' + (RechanMedia.active ? 'on' : 'off') + (RechanMedia.errors.length ? '\n  errors:\n  ' + RechanMedia.errors.join('\n  ') : ''),
       '',
       state,
       '--- last log lines ---',

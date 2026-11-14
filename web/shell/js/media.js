@@ -8,19 +8,51 @@ const RechanMedia = (() => {
 
   function has(key) { return !!RechanStore.getBlob('media/' + key); }
 
+  // Failures are kept for the diagnostics (F8): on a phone the console is
+  // not visible, and a failed decode just means silence.
+  const errors = [];
+  function noteError(key, how, e) {
+    const msg = `${key} [${how}]: ${(e && e.name) || 'Error'} ${(e && e.message) || e || ''}`.trim();
+    console.warn('[ReChan] media decode failed', msg);
+    if (errors.length < 20) errors.push(msg);
+  }
+
+  function decodeWith(ctx, data) {
+    return new Promise((resolve, reject) => {
+      try {
+        const p = ctx.decodeAudioData(data, resolve, reject);   // callback form for old Safari
+        if (p && p.then) p.then(resolve, reject);
+      } catch (e) { reject(e); }
+    });
+  }
+
+  let liveCtx = null;   // shared, only used if offline decoding fails
+  async function decodeAnyWay(key, data, preferredRate) {
+    const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    // 1) original rate (least memory)  2) 44.1 kHz (some Safari versions
+    // refuse lower rates)  3) a regular AudioContext (device rate).
+    const rates = [Math.max(22050, Math.min(48000, preferredRate | 0 || 44100)), 44100];
+    for (const rate of rates) {
+      if (!Off) break;
+      try {
+        return await decodeWith(new Off(2, rate, rate), data.slice(0));
+      } catch (e) { noteError(key, 'offline ' + rate, e); }
+    }
+    try {
+      const Live = window.AudioContext || window.webkitAudioContext;
+      if (!liveCtx && Live) liveCtx = new Live();
+      if (liveCtx) return await decodeWith(liveCtx, data.slice(0));
+    } catch (e) { noteError(key, 'live', e); }
+    return null;
+  }
+
   async function decodeAudio(key, preferredRate) {
     const blob = RechanStore.getBlob('media/' + key);
     if (!blob) return null;
-    const data = await blob.arrayBuffer();
-    // Decode straight to (about) the original rate to keep memory use like
-    // the stable mode. Safari wants >= 22050 Hz for an OfflineAudioContext.
-    const rate = Math.max(22050, Math.min(48000, preferredRate | 0 || 44100));
-    const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    const ctx = new Ctx(2, 1, rate);
-    const buf = await new Promise((resolve, reject) => {
-      const p = ctx.decodeAudioData(data, resolve, reject);
-      if (p && p.then) p.then(resolve, reject);
-    });
+    let data;
+    try { data = await blob.arrayBuffer(); } catch (e) { noteError(key, 'read', e); return null; }
+    const buf = await decodeAnyWay(key, data, preferredRate);
+    if (!buf) return null;
     const ch = Math.min(2, buf.numberOfChannels);
     const frames = buf.length;
     const pcm = new Int16Array(frames * ch);
@@ -105,5 +137,6 @@ const RechanMedia = (() => {
     get active() { return active; },
     setActive(on) { active = !!on; },
     has, decodeAudio, playMovie,
+    get errors() { return errors.slice(); },
   };
 })();

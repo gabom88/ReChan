@@ -12,6 +12,7 @@
 #include "gen/charmgr.h"
 #include "gen/time.h"
 #include "ai/pickup.h"
+#include "ai/table.h"
 #include "p3d/p3dmath.h"
 #include "pc/log.h"
 #include "p3d/context.h"
@@ -175,8 +176,78 @@ struct WeaponTemplate {
 static WeaponTemplate s_weaponTemplates[16];
 static s32 s_weaponTemplateCount = 0;
 
+// Furniture (tables 468 / chairs 471): DynamicObstacles in the move list,
+// grabbed and thrown with Jackie's table-throw action.
+struct FurnitureTemplate {
+    u16 type = 0;
+    char model[32] = {};          // model name (as the level created it)
+    u32 modelHash = 0;            // or its hash, when created from the DB
+    tagCollisionBox collBox = {};
+    LVector orientation = {};
+    u32 effectHash = 0;
+    u32 effectParam = 0;
+    u8 physicalType = 0;
+    u8 lightingFlag = 1;
+    u8 shadowFlag = 1;
+    u16 collisionRadius = 0;
+};
+static FurnitureTemplate s_furnitureTemplates[16];
+static s32 s_furnitureTemplateCount = 0;
+
 void ModClearWeaponTemplates() {
     s_weaponTemplateCount = 0;
+    s_furnitureTemplateCount = 0;
+}
+
+void ModRememberFurnitureTemplate(DynamicObstacle* obj, const char* modelName) {
+    if (!obj) return;
+    if (obj->thingType != AITypes::TT_TABLE && obj->thingType != AITypes::TT_CHAIR) return;
+    const bool hasName = modelName && *modelName;
+    if (!hasName && !obj->modelHash) return;
+    for (s32 i = 0; i < s_furnitureTemplateCount; ++i) {
+        const FurnitureTemplate& f = s_furnitureTemplates[i];
+        if (hasName ? std::strncmp(f.model, modelName, sizeof(f.model) - 1) == 0 : f.modelHash == obj->modelHash) return;
+    }
+    if (!hasName) modelName = "";
+    if (s_furnitureTemplateCount >= (s32)(sizeof(s_furnitureTemplates) / sizeof(s_furnitureTemplates[0]))) return;
+    FurnitureTemplate& t = s_furnitureTemplates[s_furnitureTemplateCount++];
+    t.type = obj->thingType;
+    std::strncpy(t.model, modelName, sizeof(t.model) - 1);
+    t.modelHash = obj->modelHash;
+    t.collBox = obj->collBox;
+    t.orientation = obj->orientation;
+    t.effectHash = obj->effectHash;
+    t.effectParam = obj->effectParam;
+    t.physicalType = obj->physicalType;
+    t.lightingFlag = obj->lightingFlag;
+    t.shadowFlag = obj->shadowFlag;
+    t.collisionRadius = obj->collisionRadius;
+    LOG_ALWAYS("[Mod] Random drop: level furniture %s (%s)", t.model[0] ? t.model : "(by hash)", t.type == AITypes::TT_TABLE ? "table" : "chair");
+}
+
+static bool DropFurniture(const FurnitureTemplate& t, const LVector& pos) {
+    Thing* thing = g_ai->AddThingNoTagList(nullptr, t.type, &pos, nullptr, t.model[0] ? t.model : nullptr, nullptr);
+    DynamicObstacle* obj = static_cast<DynamicObstacle*>(thing);
+    if (!obj) return false;
+    if (!t.model[0]) {          // created from the DB by hash
+        obj->modelHash = t.modelHash;
+        obj->CreateModel(nullptr);
+    }
+    obj->pos = pos;
+    obj->orientation = t.orientation;
+    obj->SetCollisionBox(t.collBox);
+    obj->effectHash = t.effectHash;
+    obj->effectParam = t.effectParam;
+    obj->physicalType = t.physicalType;
+    obj->lightingFlag = t.lightingFlag;
+    obj->shadowFlag = t.shadowFlag;
+    obj->collisionRadius = t.collisionRadius;
+    obj->maxHealth = 1;
+    obj->health = 1;
+    if (g_blockManager) obj->blockNum = (u16)g_blockManager->GetBlockNumber(pos);
+    obj->flags |= TF_ACTIVATED;   // gravity (field168) pulls it down while it thinks
+    LOG_ALWAYS("[Mod] Random drop: furniture %s (%d kinds of furniture in this level)", t.model, s_furnitureTemplateCount);
+    return true;
 }
 
 void ModRememberWeaponTemplate(Pickup* pickup, const char* modelName) {
@@ -254,19 +325,25 @@ bool ModTakeSelectPress() {
 bool ModDropRandomWeapon() {
     Player* player = Player::s_player;
     if (!g_ai || !player) return false;
-    if (s_weaponTemplateCount == 0) {
-        LOG_ALWAYS("[Mod] Random weapon: this level has no weapons");
+    const s32 kinds = s_weaponTemplateCount + s_furnitureTemplateCount;
+    if (kinds == 0) {
+        LOG_ALWAYS("[Mod] Random drop: this level has no weapons or furniture");
         return false;
     }
     static u32 s_seed = 0x2545F491u;
     s_seed = s_seed * 1664525u + 1013904223u + (u32)(g_time ? g_time->GetFrameCounter() : 0u);
-    const WeaponTemplate& t = s_weaponTemplates[(s_seed >> 8) % (u32)s_weaponTemplateCount];
+    const s32 pick = (s32)((s_seed >> 8) % (u32)kinds);
 
     // A little in front of Jackie and well above his head; gravity does the rest.
     LVector pos = player->pos;
-    pos.x += (s32)(((s64)rmSin16(player->faceAngle) * 300) >> 16);
-    pos.z += (s32)(((s64)rmSin16(player->faceAngle + 0x4000) * 300) >> 16);
+    const s32 ahead = pick >= s_weaponTemplateCount ? 450 : 300;   // furniture is bigger
+    pos.x += (s32)(((s64)rmSin16(player->faceAngle) * ahead) >> 16);
+    pos.z += (s32)(((s64)rmSin16(player->faceAngle + 0x4000) * ahead) >> 16);
     pos.y += 1400;
+    if (pick >= s_weaponTemplateCount) {
+        return DropFurniture(s_furnitureTemplates[pick - s_weaponTemplateCount], pos);
+    }
+    const WeaponTemplate& t = s_weaponTemplates[pick];
     // The weapon's own animations (swings, idle) are loaded per zone by the
     // level; load their groups here so it can be used anywhere.
     if (g_characterManager) {

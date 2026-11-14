@@ -620,7 +620,7 @@ Kamera folgt Jackie:
 Kein Tod durch Sturz:
 
 [FE_MD_RWPN]
-Zufallswaffe (Select):
+Zufallswaffe oder -möbel (Select):
 
 [FE_MD_SHAO]
 Shaolin-Kleidung:

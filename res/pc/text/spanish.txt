@@ -620,7 +620,7 @@ Camara sigue a Jackie:
 Sin muerte por caidas:
 
 [FE_MD_RWPN]
-Arma al azar (Select):
+Arma o mueble al azar (Select):
 
 [FE_MD_SHAO]
 Atuendo Shaolin:

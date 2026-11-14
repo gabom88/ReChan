@@ -601,6 +601,9 @@ Thing* AI::AddThingNoTagList(const char* name, u16 type,
     if (targetList == &pickupList && modelName) {
         ModRememberWeaponTemplate(static_cast<Pickup*>(thing), modelName);
     }
+    else if (type == AITypes::TT_TABLE || type == AITypes::TT_CHAIR) {
+        ModRememberFurnitureTemplate(static_cast<DynamicObstacle*>(thing), modelName ? modelName : name);
+    }
 #endif
     return thing;
 }

@@ -24,6 +24,7 @@ enum class CheatOption {
 // Mod helpers (see player.cpp / ai.cpp).
 void ModRememberWeaponTemplate(class Pickup* pickup, const char* modelName);
 void ModClearWeaponTemplates();
+void ModRememberFurnitureTemplate(class DynamicObstacle* obj, const char* modelName);
 bool ModDropRandomWeapon();
 void ModNoteSelectPress();     // host input: Select was just pressed
 bool ModTakeSelectPress();

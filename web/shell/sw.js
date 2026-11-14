@@ -15,6 +15,7 @@ const SHELL = [
   'js/extractor.js',
   'js/zippack.js',
   'js/media.js',
+  'js/netpack.js',
   'js/input.js',
   'js/dpad-gemuboy.js',
   'js/touch.js',
@@ -58,6 +59,9 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   if (new URL(req.url).pathname.endsWith('/version.json')) return; // network only
+  // The game data parts (option "Download the game") are ~100 MB: they go
+  // straight to IndexedDB, never into this cache.
+  if (/\/data\//.test(new URL(req.url).pathname)) return;
   const isPage = req.mode === 'navigate';
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);

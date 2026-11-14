@@ -30,7 +30,9 @@
 </p>
 
 > [!NOTE]
-> Este repositorio es un fork de **[SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan)**. La ingeniería inversa y la reimplementación del juego son obra de su creador, **_AG (SilverwireGames)**. Este fork añade la versión para navegador. Necesitas tu **propia copia** del juego: aquí no se distribuye ningún dato del original.
+> Este repositorio es un fork de **[SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan)**. La ingeniería inversa y la reimplementación del juego son obra de su creador, **_AG (SilverwireGames)**. Este fork añade la versión para navegador.
+>
+> *Jackie Chan Stuntmaster* © **Radical Entertainment** y **Midway Games**. Los datos del juego que se publican con la opción «Descargar el juego» se distribuyen con autorización de Radical Entertainment, **sin fines de lucro**: no se pueden vender ni usar comercialmente. Consulta [LICENSE-GAME-DATA.md](LICENSE-GAME-DATA.md).
 
 ## Qué es
 
@@ -45,9 +47,13 @@ Es el mismo código C++ de ReChan compilado a WebAssembly, que se ejecuta con We
 
 ## Cómo empezar
 
-1. Abre **https://gabom88.github.io/ReChan/** en un navegador moderno: Safari 15+, Chrome, Edge o Firefox.
-2. Pulsa **Elegir imagen del disco** y selecciona tu `.bin` o `.iso` de *Jackie Chan Stuntmaster* **NTSC-U (SLUS-00684)**.
-3. Cuando termine la extracción, pulsa **Jugar**. Las siguientes veces el juego arranca directamente.
+Abre **https://gabom88.github.io/ReChan/** en un navegador moderno (Safari 15+, Chrome, Edge o Firefox) y elige una de las tres formas de instalar el juego:
+
+1. **Desde tu disco (`.bin`/`.iso`):** pulsa **Elegir imagen del disco** y selecciona tu imagen de *Jackie Chan Stuntmaster* **NTSC-U (SLUS-00684)**. Es el modo estable, con el audio y el vídeo originales.
+2. **Con un paquete ZIP creado por ti** (experimental): audio y vídeo mejorados. Ver [la guía](GUIA-PAQUETE-ZIP.md).
+3. **Descargar el juego:** si el sitio publica el paquete, pulsa **Descargar e instalar**. Se descarga por partes, se comprueba cada una y se instala en el navegador. Si se corta la conexión, al reintentar continúa donde se quedó.
+
+Cuando termine, pulsa **Jugar**. Las siguientes veces el juego arranca directamente.
 
 **iPhone / iPad:** en Safari toca **Compartir → Añadir a pantalla de inicio**. Así se juega a pantalla completa y el sistema no borra tus datos. Safari borra el almacenamiento de las webs que no se visitan en 7 días, pero no el de las apps de la pantalla de inicio.
 
@@ -127,7 +133,7 @@ Activa **Golpes: directos** en la configuración del mando táctil. Los botones 
 - **ReChan:** creado por **_AG**, de [SilverwireGames/ReChan](https://github.com/SilverwireGames/ReChan). Suyos son la ingeniería inversa, la reimplementación del juego, el motor (libp3d), el port a Switch (cuyo backend GLES hace posible esta versión) y el extractor de disco. Licencia MIT.
 - **Port web:** Bardock ([gabom88](https://github.com/gabom88)).
 - **Bibliotecas:** [Emscripten](https://emscripten.org/), [miniaudio](https://miniaud.io/), [Dear ImGui](https://github.com/ocornut/imgui), [cgltf](https://github.com/jkuhlmann/cgltf), [stb](https://github.com/nothings/stb) y [ffmpeg](https://ffmpeg.org/) (en el conversor).
-- *Jackie Chan Stuntmaster* y todas sus marcas, personajes y assets pertenecen a sus respectivos dueños. Este proyecto no distribuye ningún dato del juego original.
+- ***Jackie Chan Stuntmaster*** © **Radical Entertainment** (desarrollo) y **Midway Games** (edición). Todas sus marcas, personajes y assets pertenecen a sus respectivos dueños. Los datos del juego se distribuyen con autorización y sin fines de lucro según [LICENSE-GAME-DATA.md](LICENSE-GAME-DATA.md).
 
 ---
 

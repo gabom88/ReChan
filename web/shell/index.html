@@ -64,6 +64,15 @@
         <p class="hint mono" id="extract-file"></p>
       </section>
 
+      <!-- Option 3: the pack published with the page (data/pack.json). Shown
+           only when the parts are there. -->
+      <section id="panel-net" class="panel zip-box net-box hidden">
+        <h2 class="zip-title"><span data-i18n="netTitle"></span></h2>
+        <p id="net-info"></p>
+        <button class="btn primary" id="net-btn" data-i18n="netDownload"></button>
+        <p class="hint" data-i18n="netLicense"></p>
+      </section>
+
       <section id="panel-error" class="panel hidden">
         <p class="error" id="error-text"></p>
         <button class="btn" id="error-retry" data-i18n="retry"></button>
@@ -83,7 +92,8 @@
       <p class="hint version-line"><span class="version-text"></span> · <button class="linkbtn version-check" data-i18n="checkUpdates"></button></p>
       <footer>
         <span data-i18n="credits"></span>
-        <a href="https://github.com/SilverwireGames/ReChan" target="_blank" rel="noopener">SilverwireGames</a>
+        <a href="https://github.com/SilverwireGames/ReChan" target="_blank" rel="noopener">SilverwireGames</a><br>
+        <span data-i18n="gameCredits"></span>
       </footer>
     </div>
   </main>
@@ -201,6 +211,7 @@
   <script src="js/extractor.js"></script>
   <script src="js/zippack.js"></script>
   <script src="js/media.js"></script>
+  <script src="js/netpack.js"></script>
   <script src="js/input.js"></script>
   <script src="js/dpad-gemuboy.js"></script>
   <script src="js/touch.js"></script>

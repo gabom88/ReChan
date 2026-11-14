@@ -40,8 +40,12 @@
   function showPanel(name) {
     for (const p of document.querySelectorAll('#launcher .panel')) p.classList.add('hidden');
     $('panel-' + name).classList.remove('hidden');
-    // The optional ZIP mode sits in its own box under the disc picker.
-    if (name === 'disc') $('panel-zip').classList.remove('hidden');
+    // The optional ZIP mode sits in its own box under the disc picker, and
+    // the published download (option 3) below it when available.
+    if (name === 'disc') {
+      $('panel-zip').classList.remove('hidden');
+      if (netPack) $('panel-net').classList.remove('hidden');
+    }
   }
 
   let toastTimer = 0;
@@ -124,6 +128,43 @@
       showError(e instanceof RechanExtractor.ExtractError ? e.message : String(e && e.message || e));
     } finally {
       $('disc-input').value = '';
+    }
+  }
+
+  // --- option 3: download the pack published with the page ---
+  let netPack = null;
+  async function checkNetPack() {
+    netPack = await RechanNetPack.info();
+    if (!netPack) return;
+    $('net-info').textContent = t('netInfo', { size: fmtBytes(netPack.size), parts: netPack.parts.length });
+    if (!$('panel-disc').classList.contains('hidden')) $('panel-net').classList.remove('hidden');
+  }
+  async function onNetDownload() {
+    if (!netPack) return;
+    showPanel('extract');
+    $('extract-bar').style.width = '0%';
+    $('extract-status').textContent = t('netDownloading', { pct: 0, part: 1, parts: netPack.parts.length });
+    $('extract-file').textContent = fmtBytes(netPack.size);
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    try {
+      const meta = await RechanNetPack.downloadAndImport(netPack, (p) => {
+        const pct = Math.floor((p.done / Math.max(p.total, 1)) * 100);
+        $('extract-bar').style.width = pct + '%';
+        if (p.phase === 'download') {
+          $('extract-status').textContent = t('netDownloading', { pct, part: p.part, parts: p.parts });
+          $('extract-file').textContent = fmtBytes(p.done) + ' / ' + fmtBytes(p.total);
+        } else {
+          $('extract-status').textContent = t('importingZip', { pct });
+          if (p.current) $('extract-file').textContent = p.current;
+        }
+      });
+      await RechanStore.load();
+      toast(t('extracted', { files: meta.files, size: fmtBytes(meta.bytes) }));
+      await showReady();
+    } catch (e) {
+      console.error(e);
+      if (e instanceof RechanZipPack.PackError) showError(t('zipErr_' + e.message));
+      else showError(t('netErr', { msg: String(e && e.message || e) }));
     }
   }
 
@@ -597,6 +638,8 @@
     document.addEventListener('dblclick', (e) => { if (playing) e.preventDefault(); });
 
     wireUpdates();
+    $('net-btn').addEventListener('click', onNetDownload);
+    checkNetPack();
 
     // ?autoplay skips the launcher when assets are present (handy from the home-screen icon).
     checkAssets().then(() => {

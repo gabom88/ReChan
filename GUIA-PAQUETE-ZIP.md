@@ -120,4 +120,15 @@ Después ya no necesitas el ZIP en el dispositivo: el juego queda guardado en el
 | Al pulsar Enter sale `^M` (Mac) | Escribe `stty sane`, pulsa Enter y vuelve a abrir el conversor. |
 | Algún vídeo «could not convert» | No pasa nada: ese vídeo se queda en el formato original y el juego lo reproduce igual. Si te pasa, avísanos con el mensaje. |
 
+## Publicarlo para la opción «Descargar el juego»
+
+Solo para quien mantiene el sitio. Las condiciones de distribución están en [LICENSE-GAME-DATA.md](LICENSE-GAME-DATA.md).
+
+1. Parte el paquete en trozos de 19 MB:
+   ```bash
+   python3 tools/media_pack/split_pack.py rechan-pack-small.zip
+   ```
+2. Sube el **contenido** de la carpeta `data` que se crea junto al ZIP (`pack.json` y `rechan-pack.part001`…) a [`web/shell/data/`](web/shell/data/) del repositorio. En GitHub: entra en esa carpeta → **Add file → Upload files**.
+3. Al hacer *commit* en `main`, el sitio se vuelve a publicar solo y la pantalla de inicio muestra la opción **Descargar el juego**.
+
 ¿Usas la línea de comandos? Las opciones avanzadas (`--quality`, `--movie-crf`…) están en [tools/media_pack/README.md](tools/media_pack/README.md).
